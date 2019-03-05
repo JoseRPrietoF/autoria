@@ -13,9 +13,6 @@ class canon60Dataset():
         self.path = path
         self.flists = self.get_files()
         self.X, self.y = self.read_files()
-        print(self.X)
-        print(self.y)
-
 
     def get_files(self, ext="txt"):
         """
