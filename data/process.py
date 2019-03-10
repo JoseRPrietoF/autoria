@@ -1,5 +1,6 @@
 import glob
 
+NL = "NL"
 
 class canon60Dataset():
     """
@@ -7,7 +8,7 @@ class canon60Dataset():
     """
 
     def __init__(self, path):
-        self.NL = "NL"
+
         if path.endswith('/'):
             path = path[:-1]
         self.path = path
@@ -35,7 +36,7 @@ class canon60Dataset():
 
             author = content[0].split(";")[0][2:]
             text = content[1:]
-            text = [x.replace("\n", " {}".format(self.NL)) for x in text]
+            text = [x.replace("\n", " {}".format(NL)) for x in text]
 
             X.append(text)
             y.append(author)
@@ -43,6 +44,20 @@ class canon60Dataset():
         return X,y
 
 
+def read_vocab(fname):
+    """
+    Return a dict with the vocab and the freqs
+    :return:
+    """
+    X = {"NL":0}
+    with open(fname) as f:
+        content = f.readlines()
+        for line in content:
+            freq, vocab = line.split()
+            freq = int(freq)
+            X[vocab] = freq
+
+    return X
 
 
 if __name__ == "__main__":
