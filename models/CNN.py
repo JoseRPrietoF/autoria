@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-def conv1d(X, filters=1, stride=1, kernel=(3,1), activation=tf.nn.relu):
+def conv1d(X, filters=1, stride=1, kernel=3, activation=tf.nn.relu):
     '''
     :param input_: A tensor of embedded tokens with shape [batch_size,max_length,embedding_size]
     :param output_size: The number of feature maps we'd like to calculate
@@ -17,7 +17,7 @@ def conv1d(X, filters=1, stride=1, kernel=(3,1), activation=tf.nn.relu):
     #Make sure the height of the filter is 1
     convolved = tf.layers.conv2d(
         X,
-        filters, kernel,
+        filters, (kernel, 1),
         activation=activation,
         strides=[stride,1],
         padding='same',
@@ -31,15 +31,19 @@ def conv1d(X, filters=1, stride=1, kernel=(3,1), activation=tf.nn.relu):
     return result
 
 def get_model(X, W, n_classes=23):
-    tf_word_representation_layer = tf.nn.embedding_lookup(W, X
-    )
+    tf_word_representation_layer = tf.nn.embedding_lookup(W, X)
     X = tf.expand_dims(X, axis=-1)  # Change the shape to [batch_size,1,max_length,output_size]
     print("Model representation {}".format(tf_word_representation_layer))
-    net = conv1d(X, 1, stride=2)
+    net = conv1d(X, 1, stride=2, kernel=7)
+    net = conv1d(net, 1, kernel=5)
     print(net)
-    net = conv1d(net, 1, )
+    net = conv1d(net, 1, kernel=3)
     print(net)
-    net = tf.layers.dense(tf.layers.flatten(net), n_classes)
+    net = tf.layers.flatten(net)
+    net = tf.layers.dense(net, 512)
+    net = tf.layers.dense(net, 256)
+    net = tf.layers.dense(net, 64)
+    net = tf.layers.dense(net, n_classes)
 
     return net
 

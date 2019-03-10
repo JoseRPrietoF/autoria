@@ -19,9 +19,8 @@ dir_word_embeddings = '/data2/jose/word_embedding/glove-sbwc.i25.vec'
 EMBEDDING_DIM = 100
 MAX_SEQUENCE_LENGTH = 50
 BATCH_SIZE = 8  # Any size is accepted
-num_hidden = 64
 DEV_SPLIT = 0.2
-NUM_EPOCH = 6
+NUM_EPOCH = 100
 
 """
 """
@@ -173,7 +172,7 @@ for epoch in range(epoch_start, NUM_EPOCH+1):
 
     current_batch_index = 0
     next_element = iter.get_next()
-
+    loss_count = 0
     while True:
 
         try:
@@ -191,13 +190,14 @@ for epoch in range(epoch_start, NUM_EPOCH+1):
                                       y: batch_tgt,
                                       batch_size: BATCH_SIZE,
                                   })
-        print(loss_result)
+        loss_count += loss_result
         # for i in range(len(batch_tgt)):
         #     print(batch_x[i])
         #     print(batch_tgt[i])
         #     print("--")
         # print("-----------")
-
+    loss_count = loss_count / current_batch_index
+    print("Loss on epoch {} : {}".format(epoch, loss_count))
     print("Eval")
     ## Eval
     sess.run(dev_init_op, feed_dict={
