@@ -5,6 +5,7 @@ from keras.preprocessing.sequence import pad_sequences
 from sklearn.model_selection import train_test_split
 from models.CNN import *
 from utils import train_ops
+from utils import metrics
 """
 Vars
 """
@@ -16,8 +17,8 @@ fname_vocab = root_path+"vocabulario"
 
 dir_word_embeddings = '/data2/jose/word_embedding/glove-sbwc.i25.vec'
 
-EMBEDDING_DIM = 100
-MAX_SEQUENCE_LENGTH = 50
+EMBEDDING_DIM = 300
+MAX_SEQUENCE_LENGTH = 80
 BATCH_SIZE = 8  # Any size is accepted
 DEV_SPLIT = 0.2
 NUM_EPOCH = 100
@@ -210,6 +211,7 @@ for epoch in range(epoch_start, NUM_EPOCH+1):
     current_batch_index = 0
     next_element = iter.get_next()
 
+    acc = 0
     while True:
 
         try:
@@ -227,8 +229,11 @@ for epoch in range(epoch_start, NUM_EPOCH+1):
                                       y: batch_tgt,
                                       batch_size: BATCH_SIZE,
                                   })
-        #
-        # for i in range(len(results)):
-        #     print(results[i])
-        #
-        # print("----------")
+
+        for i in range(len(results)):
+            acc_aux = metrics.accuracy(X=results[i], y=batch_tgt[i])
+            acc += acc_aux
+
+    acc = acc / current_batch_index
+    print("Acc Val epoch {} : {}".format(epoch, acc))
+    print("----------")
