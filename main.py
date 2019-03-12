@@ -2,6 +2,7 @@ import numpy as np
 import tensorflow as tf
 
 from models import CNN
+from models import RNN
 from data.prepare_text import prepare_data
 from utils import train_ops
 from utils import metrics
@@ -12,6 +13,12 @@ root_path = "/data2/jose/data_autoria/"
 train_path = root_path+"train"
 test_path = root_path+"test"
 fname_vocab = root_path+"vocabulario"
+
+MODEL = "RNN"
+# MODEL = "CNN"
+#FOR RNN
+HIDDEN_UNITS = 32
+NUM_LAYERS = 4
 
 
 dir_word_embeddings = '/data2/jose/word_embedding/glove-sbwc.i25.vec'
@@ -35,6 +42,7 @@ batch_size = tf.placeholder(tf.int64, name="batch_size")
 X = tf.placeholder(tf.int64, shape=[None, MAX_SEQUENCE_LENGTH])
 y = tf.placeholder(tf.int64, shape=[None, n_classes])
 is_training = tf.placeholder_with_default(False, shape=[], name='is_training')
+dropout_keep_prob = tf.placeholder_with_default(1.0, shape=())
 
 glove_weights_initializer = tf.constant_initializer(embedding)
 print(glove_weights_initializer)
@@ -47,7 +55,11 @@ print(embeddings)
 """
 GET THE MODEL
 """
-logits = CNN.get_model(X, embeddings, is_training, filters=filters, n_classes=n_classes)
+if MODEL == "CNN":
+    logits = CNN.get_model(X, embeddings, is_training, filters=filters, n_classes=n_classes)
+elif MODEL == "RNN":
+    logits = RNN.get_model(X, embeddings,dropout_keep_prob, hidden_size = HIDDEN_UNITS, n_classes=n_classes, num_layers=NUM_LAYERS)
+
 print(logits)
 softmax = tf.nn.softmax(logits)
 
@@ -111,7 +123,8 @@ for epoch in range(epoch_start, NUM_EPOCH+1):
                                       X: batch_x,
                                       y: batch_tgt,
                                       batch_size: BATCH_SIZE,
-                                      is_training: True
+                                      is_training: True,
+                                      dropout_keep_prob: 0.5
                                   })
         loss_count += loss_result
 
@@ -147,6 +160,7 @@ for epoch in range(epoch_start, NUM_EPOCH+1):
                                       X: batch_x,
                                       y: batch_tgt,
                                       batch_size: BATCH_SIZE,
+                                      dropout_keep_prob: 1.0
                                   })
 
         for i in range(len(results)):
@@ -188,6 +202,7 @@ while True:
                            X: batch_x,
                            y: batch_tgt,
                            batch_size: BATCH_SIZE,
+                           dropout_keep_prob:1.0,
                        })
 
     for i in range(len(results)):
