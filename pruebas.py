@@ -4,7 +4,7 @@ from models.CNN import *
 
 
 EMBEDDING_DIM = 300
-MAX_SEQUENCE_LENGTH = 50
+MAX_SEQUENCE_LENGTH = 100
 BATCH_SIZE = 8  # Any size is accepted
 num_hidden = 64
 DEV_SPLIT = 0.2
@@ -23,6 +23,7 @@ palNum = {
 batch_size = tf.placeholder(tf.int64, name="batch_size")
 X = tf.placeholder(tf.int64, shape=[None, MAX_SEQUENCE_LENGTH])
 y = tf.placeholder(tf.int64, shape=[None])
+is_training = tf.placeholder_with_default(False, shape=[], name='is_training')
 
 embeddings = tf.Variable(
     tf.random_uniform([2000, EMBEDDING_DIM], -1.0, 1.0))
@@ -31,7 +32,7 @@ embeddings = tf.Variable(
 """
 GET THE MODEL
 """
-logits = get_model(X, embeddings)
+logits = get_model(X, embeddings, is_training)
 print(logits)
 """"""
 

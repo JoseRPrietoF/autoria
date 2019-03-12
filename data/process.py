@@ -36,6 +36,7 @@ class canon60Dataset():
 
             author = content[0].split(";")[0][2:]
             text = content[1:]
+            text = [x.lower() for x in text]
             text = [x.replace("\n", " {}".format(NL)) for x in text]
 
             X.append(text)
@@ -54,6 +55,7 @@ def read_vocab(fname):
         content = f.readlines()
         for line in content:
             freq, vocab = line.split()
+            vocab = vocab.lower()
             freq = int(freq)
             X[vocab] = freq
 

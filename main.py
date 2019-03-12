@@ -17,12 +17,12 @@ fname_vocab = root_path+"vocabulario"
 
 dir_word_embeddings = '/data2/jose/word_embedding/glove-sbwc.i25.vec'
 
-EMBEDDING_DIM = 300
+EMBEDDING_DIM = 50
 MAX_SEQUENCE_LENGTH = 80
 BATCH_SIZE = 8  # Any size is accepted
 DEV_SPLIT = 0.2
 NUM_EPOCH = 100
-
+ex_word = "hola"
 """
 """
 
@@ -58,12 +58,14 @@ classNum = {}
 numClass = {}
 
 for i, word in enumerate(vocab):
-    palNum[word] = i+1
-    numPal[i+1] = word
+    palNum[word] = i
+    numPal[i] = word
 
 for i, c in enumerate(list(classes.keys())):
     classNum[c] = i
     numClass[i] = c
+
+n_ex = palNum[ex_word]
 
 X = []
 y = []
@@ -87,22 +89,26 @@ print(len(X))
 print(len(y))
 
 embeddings_index = {}
-embeddings_tmp = []
+# embeddings_tmp = []
+embedding = np.random.randn(vocab_size, EMBEDDING_DIM)
 with open(dir_word_embeddings, encoding="utf8") as glove_file:
+
     for line in glove_file:
         values = line.split()
         word = values[0]
         coefs = np.asarray(values[1:], dtype='float32')
         embeddings_index[word] = coefs[:EMBEDDING_DIM]
         item = palNum.get(word, False)
-        if item:
-            embeddings_tmp.append(coefs)
-        # else:
-        #     rand_num = np.random.uniform(low=-0.2, high=0.2, size=EMBEDDING_DIM)
-        #     embeddings_tmp.append(rand_num)
+
+
+for word, i in palNum.items():
+    embedding_vector = embeddings_index.get(word)
+    if embedding_vector is not None:
+        embedding[i] = embedding_vector
+
 
 # final embedding array corresponds to dictionary of words in the document
-embedding = np.asarray(embeddings_tmp)
+# embedding = np.asarray(embeddings_tmp)
 
 n_etiquetas = n_classes
 X = pad_sequences(X, maxlen=MAX_SEQUENCE_LENGTH)
@@ -123,6 +129,7 @@ print('Numero total de vectores {}'.format(len(embeddings_index)))
 batch_size = tf.placeholder(tf.int64, name="batch_size")
 X = tf.placeholder(tf.int64, shape=[None, MAX_SEQUENCE_LENGTH])
 y = tf.placeholder(tf.int64, shape=[None, n_classes])
+is_training = tf.placeholder_with_default(False, shape=[], name='is_training')
 
 glove_weights_initializer = tf.constant_initializer(embedding)
 print(glove_weights_initializer)
@@ -135,12 +142,18 @@ print(embeddings)
 """
 GET THE MODEL
 """
-logits = get_model(X, embeddings)
+logits = get_model(X, embeddings, is_training)
 print(logits)
 softmax = tf.nn.softmax(logits)
 
 train_op, loss = train_ops.train_op(logits,y)
 """"""
+"""Test de embeddings"""
+# embd_hola = embeddings_index[ex_word]
+# emb_hola = embedding[palNum[ex_word]]
+# print(embd_hola == emb_hola)
+#
+# exit()
 
 train_dataset = tf.data.Dataset.from_tensor_slices((X, y)).batch(batch_size).shuffle(buffer_size=12)
 dev_dataset = tf.data.Dataset.from_tensor_slices((X, y)).batch(batch_size).shuffle(buffer_size=12)
@@ -190,12 +203,17 @@ for epoch in range(epoch_start, NUM_EPOCH+1):
                                       X: batch_x,
                                       y: batch_tgt,
                                       batch_size: BATCH_SIZE,
+                                      is_training: True
                                   })
         loss_count += loss_result
-        # for i in range(len(batch_tgt)):
-        #     print(batch_x[i])
-        #     print(batch_tgt[i])
-        #     print("--")
+        # emb = sess.run([logits],
+        #                           feed_dict={
+        #                               X: [[n_ex]*MAX_SEQUENCE_LENGTH],
+        #                               y: batch_tgt,
+        #                               batch_size: BATCH_SIZE,
+        #                           })
+
+
         # print("-----------")
     loss_count = loss_count / current_batch_index
     print("Loss on epoch {} : {}".format(epoch, loss_count))
