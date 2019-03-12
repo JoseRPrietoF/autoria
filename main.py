@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 
-from models.CNN import *
+from models import CNN
 from data.prepare_text import prepare_data
 from utils import train_ops
 from utils import metrics
@@ -15,13 +15,13 @@ fname_vocab = root_path+"vocabulario"
 
 
 dir_word_embeddings = '/data2/jose/word_embedding/glove-sbwc.i25.vec'
-
+OPTIMIZER = 'rms'
 EMBEDDING_DIM = 300
 MAX_SEQUENCE_LENGTH = None
 BATCH_SIZE = 16  # Any size is accepted
 DEV_SPLIT = 0.2
-NUM_EPOCH = 50
-ex_word = "hola"
+NUM_EPOCH = 1000
+filters = [64,128,256,512]
 
 X_train, X_val, X_test, y_train, y_val, y_test, embedding, n_classes, MAX_SEQUENCE_LENGTH = prepare_data(
     dir_word_embeddings, fname_vocab, train_path, test_path, EMBEDDING_DIM,
@@ -47,7 +47,7 @@ print(embeddings)
 """
 GET THE MODEL
 """
-logits = get_model(X, embeddings, is_training, n_classes=n_classes)
+logits = CNN.get_model(X, embeddings, is_training, filters=filters, n_classes=n_classes)
 print(logits)
 softmax = tf.nn.softmax(logits)
 
@@ -55,7 +55,7 @@ num_params = np.sum([np.prod(v.get_shape().as_list()) for v in tf.trainable_vari
 
 print("{} params to train".format(num_params))
 
-train_op, loss = train_ops.train_op(logits,y)
+train_op, loss = train_ops.train_op(logits,y, optimizer=OPTIMIZER)
 """"""
 """Test de embeddings"""
 
