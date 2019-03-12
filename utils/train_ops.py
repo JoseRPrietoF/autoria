@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 
-def train_op(X,y, learning_rate=0.01):
+def train_op(X,y, learning_rate=0.001):
     y = tf.cast(y, dtype=tf.float32)
     loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=y, logits=X)
     loss = tf.reduce_sum(loss)

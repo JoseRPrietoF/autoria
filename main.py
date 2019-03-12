@@ -1,9 +1,8 @@
-from data import process
 import numpy as np
 import tensorflow as tf
-from keras.preprocessing.sequence import pad_sequences
-from sklearn.model_selection import train_test_split
+
 from models.CNN import *
+from data.prepare_text import prepare_data
 from utils import train_ops
 from utils import metrics
 """
@@ -17,111 +16,17 @@ fname_vocab = root_path+"vocabulario"
 
 dir_word_embeddings = '/data2/jose/word_embedding/glove-sbwc.i25.vec'
 
-EMBEDDING_DIM = 50
-MAX_SEQUENCE_LENGTH = 80
+EMBEDDING_DIM = 30
+MAX_SEQUENCE_LENGTH = None
 BATCH_SIZE = 8  # Any size is accepted
 DEV_SPLIT = 0.2
 NUM_EPOCH = 100
 ex_word = "hola"
-"""
-"""
 
-print("Loading train dataset...")
-dt_train = process.canon60Dataset(train_path)
-print("Loaded")
-
-print("Loading test dataset...")
-dt_test = process.canon60Dataset(test_path)
-print("Loaded")
-
-classes = {}
-
-for c in dt_train.y:
-    c_count = classes.get(c, 0)
-    classes[c] = c_count + 1
-
-n_classes = len(classes.keys())
-print("N_Classes: {}".format(n_classes))
-[print("{} -> {}".format(x, classes[x])) for x in classes.keys()]
-print("-"*30)
-vocab_freq = process.read_vocab(fname_vocab)
-vocab = list(vocab_freq.keys())
-vocab_size = len(vocab)
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-#Init
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-#Words to numbers
-palNum = {}
-numPal = {}
-classNum = {}
-numClass = {}
-
-for i, word in enumerate(vocab):
-    palNum[word] = i
-    numPal[i] = word
-
-for i, c in enumerate(list(classes.keys())):
-    classNum[c] = i
-    numClass[i] = c
-
-n_ex = palNum[ex_word]
-
-X = []
-y = []
-
-for i,sentence in enumerate(dt_train.X):
-    tempX = []
-    c = dt_train.y[i]
-    for words in sentence:
-        words = words.split()
-        for word in words:
-            tempX.append(palNum[word])
-
-    X.append(tempX)
-    y.append(classNum[c])
-
-#onehot
-n_values = np.max(y) + 1
-y = np.eye(n_values)[y]
-
-print(len(X))
-print(len(y))
-
-embeddings_index = {}
-# embeddings_tmp = []
-embedding = np.random.randn(vocab_size, EMBEDDING_DIM)
-with open(dir_word_embeddings, encoding="utf8") as glove_file:
-
-    for line in glove_file:
-        values = line.split()
-        word = values[0]
-        coefs = np.asarray(values[1:], dtype='float32')
-        embeddings_index[word] = coefs[:EMBEDDING_DIM]
-        item = palNum.get(word, False)
-
-
-for word, i in palNum.items():
-    embedding_vector = embeddings_index.get(word)
-    if embedding_vector is not None:
-        embedding[i] = embedding_vector
-
-
-# final embedding array corresponds to dictionary of words in the document
-# embedding = np.asarray(embeddings_tmp)
-
-n_etiquetas = n_classes
-X = pad_sequences(X, maxlen=MAX_SEQUENCE_LENGTH)
-
-X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=DEV_SPLIT, random_state=3)
-
-print(len(X_train))
-print(X_train[0].shape)
-
-print('Datos de entrenamiento {}'.format(len(X_train)))
-print('Datos de validacion {}'.format(len(X_val)))
-print('Numero total de vectores {}'.format(len(embeddings_index)))
-
+X_train, X_val, X_test, y_train, y_val, y_test, embedding, n_classes, MAX_SEQUENCE_LENGTH = prepare_data(
+    dir_word_embeddings, fname_vocab, train_path, test_path, EMBEDDING_DIM,
+    VALIDATION_SPLIT=DEV_SPLIT, MAX_SEQUENCE_LENGTH=MAX_SEQUENCE_LENGTH
+)
 """""""""""""""""""""""""""""""""""
 # Tensorflow
 """""""""""""""""""""""""""""""""""
@@ -142,18 +47,17 @@ print(embeddings)
 """
 GET THE MODEL
 """
-logits = get_model(X, embeddings, is_training)
+logits = get_model(X, embeddings, is_training, n_classes=n_classes)
 print(logits)
 softmax = tf.nn.softmax(logits)
+
+num_params = np.sum([np.prod(v.get_shape().as_list()) for v in tf.trainable_variables()])
+
+print("{} params to train".format(num_params))
 
 train_op, loss = train_ops.train_op(logits,y)
 """"""
 """Test de embeddings"""
-# embd_hola = embeddings_index[ex_word]
-# emb_hola = embedding[palNum[ex_word]]
-# print(embd_hola == emb_hola)
-#
-# exit()
 
 train_dataset = tf.data.Dataset.from_tensor_slices((X, y)).batch(batch_size).shuffle(buffer_size=12)
 dev_dataset = tf.data.Dataset.from_tensor_slices((X, y)).batch(batch_size).shuffle(buffer_size=12)
@@ -206,20 +110,13 @@ for epoch in range(epoch_start, NUM_EPOCH+1):
                                       is_training: True
                                   })
         loss_count += loss_result
-        # emb = sess.run([logits],
-        #                           feed_dict={
-        #                               X: [[n_ex]*MAX_SEQUENCE_LENGTH],
-        #                               y: batch_tgt,
-        #                               batch_size: BATCH_SIZE,
-        #                           })
 
-
-        # print("-----------")
     loss_count = loss_count / current_batch_index
     print("Loss on epoch {} : {}".format(epoch, loss_count))
     print("Eval")
     ## Eval
-    sess.run(dev_init_op, feed_dict={
+    sess.run(train_init_op, feed_dict={
+    # sess.run(dev_init_op, feed_dict={
         X: dev_data[0],
         y: dev_data[1],
         batch_size: BATCH_SIZE,

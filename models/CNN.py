@@ -1,12 +1,10 @@
 import tensorflow as tf
+import os
 
-def conv1d_layer(x, filter_shape):
+def conv1d_layer(x, filters, kernel_size):
     """This is a 1d conv, so filter_shape = [dim, input_channels, out_channels]"""
-    # W = tf.Variable(tf.truncated_normal(filter_shape, stddev=0.01))
-    # b = tf.Variable(tf.random_normal(shape=[filter_shape[2]]))
-    # x = tf.nn.conv1d(inp,W,stride=1,padding="VALID")
-    # x = tf.nn.bias_add(x, b)
-    x = tf.layers.conv1d(x, filter_shape[2], filter_shape[0])
+
+    x = tf.layers.conv1d(x, filters, kernel_size)
     x = tf.nn.relu(x)
     return x
 
@@ -39,13 +37,24 @@ def batch_norm_layer(inp):
     return x
 
 
-def get_model(X, W,is_training, n_classes=23, EMBEDDING_DIM=300):
+def get_model(X, W,is_training, n_classes=23):
+    """
+    doc here :)
+    :param X:
+    :param W:
+    :param is_training:
+    :param n_classes:
+    :return:
+    """
+    print("CREATING THE MODEL \n")
+    tf.logging.set_verbosity(tf.logging.FATAL)
+    print(X)
     tf_word_representation_layer = tf.nn.embedding_lookup(W, X)
     # X = tf.expand_dims(X, axis=-1)  # Change the shape to [batch_size,1,max_length,output_size]
     print("Model representation {}".format(tf_word_representation_layer))
     print("Conv1")
     with tf.name_scope("conv1"):
-        net = conv1d_layer(tf_word_representation_layer, filter_shape=[5, EMBEDDING_DIM, 128])
+        net = conv1d_layer(tf_word_representation_layer, filters=128, kernel_size=5)
         print(net)
         net = max_pool1d_layer(net, ksize=[1, 5, 1, 1], strides=[1, 2, 1, 1])
         print(net)
@@ -53,7 +62,7 @@ def get_model(X, W,is_training, n_classes=23, EMBEDDING_DIM=300):
         print(net)
     print("Conv2")
     with tf.name_scope("conv2"):
-        net = conv1d_layer(net, filter_shape=[5, 128, 128])
+        net = conv1d_layer(net, filters=128, kernel_size=5)
         print(net)
         net = max_pool1d_layer(net, ksize=[1, 5, 1, 1], strides=[1, 2, 1, 1])
         print(net)
@@ -61,15 +70,17 @@ def get_model(X, W,is_training, n_classes=23, EMBEDDING_DIM=300):
         print(net)
     print("Conv3")
     with tf.name_scope("conv3"):
-        net = conv1d_layer(net, filter_shape=[5, 128, 64])
+        net = conv1d_layer(net, filters=64, kernel_size=5)
         print(net)
         net = max_pool1d_layer(net, ksize=[1, 5, 1, 1], strides=[1, 2, 1, 1])
         print(net)
         net = batch_norm_layer(tf.cast(net, dtype=tf.float32))
         print(net)
     net = tf.layers.flatten(net)
+    print("Flatten {}".format(net))
     net = tf.layers.dropout(net, 0.5, training=is_training)
     net = tf.layers.dense(net, 128)
+    print("First dense {}".format(net))
     net = tf.layers.dense(net, n_classes)
 
     return net
