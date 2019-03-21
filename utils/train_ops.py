@@ -15,3 +15,13 @@ def train_op(X,y, learning_rate=0.001, optimizer='adam'):
         optim = tf.train.RMSPropOptimizer(learning_rate=learning_rate)
 
     return optim.minimize(loss), loss
+
+
+def lr_scheduler(epoch):
+    if epoch < 25:
+        return 0.001
+    if epoch < 40:
+        return 0.0001
+
+
+    return 0.00001

@@ -7,10 +7,11 @@ class canon60Dataset():
     Class to handle the canon60Dataset feeding
     """
 
-    def __init__(self, path):
+    def __init__(self, path, join_all=False):
 
         if path.endswith('/'):
             path = path[:-1]
+        self.join_all = join_all
         self.path = path
         self.flists = self.get_files()
         self.X, self.y = self.read_files()
@@ -37,7 +38,10 @@ class canon60Dataset():
             author = content[0].split(";")[0][2:]
             text = content[1:]
             text = [x.lower() for x in text]
-            text = [x.replace("\n", " {}".format(NL)) for x in text]
+            if self.join_all:
+                text = ' '.join([x.replace("\n", " ") for x in text])
+            else:
+                text = [x.replace("\n", " {}".format(NL)) for x in text]
 
             X.append(text)
             y.append(author)

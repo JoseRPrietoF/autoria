@@ -1,5 +1,6 @@
 from sklearn.feature_extraction.text import TfidfVectorizer
 
+from sklearn.neural_network import MLPClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.naive_bayes import MultinomialNB
@@ -193,9 +194,14 @@ Classify = classify(x_train, y_train)
 del x_train
 del y_train
 
-#classifyer = {SVC(kernel="linear",probability=True):'SVC'}
-
-classifyer = {KNeighborsClassifier():'KNN',GaussianNB():'GNB',MultinomialNB():'MNB',LogisticRegression():'LR',DecisionTreeClassifier():'DTC',RandomForestClassifier():'RFC',SVC():'SVC'}
+classifyer = {
+	MLPClassifier(hidden_layer_sizes=(32, 16)): "MLP",
+	MLPClassifier(hidden_layer_sizes=(64, 32 )):"MLP2",
+	MLPClassifier(hidden_layer_sizes=(128, 64, 32 )):"MLP3",
+	MLPClassifier(hidden_layer_sizes=(256, 128, 64, 32)):"MLP4",
+	MLPClassifier(hidden_layer_sizes=(512,256,128, 64,32)):"MLP5",
+}
+# classifyer = {KNeighborsClassifier():'KNN',GaussianNB():'GNB',MultinomialNB():'MNB',LogisticRegression():'LR',DecisionTreeClassifier():'DTC',RandomForestClassifier():'RFC',SVC():'SVC'}
 
 '''
 TF-IDF-based representation 
