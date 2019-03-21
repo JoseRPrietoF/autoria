@@ -37,7 +37,7 @@ def batch_norm_layer(inp):
     return x
 
 
-def get_model(X, W,is_training, filters, n_classes=23):
+def get_model(X, W,is_training, filters, n_classes=23, tf_idf=False):
     """
     doc here :)
     :param X:
@@ -49,8 +49,10 @@ def get_model(X, W,is_training, filters, n_classes=23):
     print("CREATING THE MODEL \n")
     tf.logging.set_verbosity(tf.logging.FATAL)
     print(X)
-    net = tf.nn.embedding_lookup(W, X)
-    # X = tf.expand_dims(X, axis=-1)  # Change the shape to [batch_size,1,max_length,output_size]
+    if not tf_idf:
+        net = tf.nn.embedding_lookup(W, X)
+    else:
+        X = tf.expand_dims(X, axis=-1)  # Change the shape to [batch_size,1,,output_size]
     print("Model representation {}".format(net))
     for i, f in enumerate(filters):
         print("Conv{}".format(i))

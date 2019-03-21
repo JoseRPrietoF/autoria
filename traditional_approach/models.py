@@ -94,8 +94,8 @@ class classify():
 
 			rep_temp = rep
 			clf_temp = clf
-
 			texts_rep = rep_temp.fit_transform(x_train)
+
 			texts_rep = texts_rep.toarray()
 			text_test_rep = rep_temp.transform(x_test)
 			text_test_rep = text_test_rep.toarray()
@@ -149,7 +149,7 @@ class classify():
 
 
 
-root = '../texts/'
+root = '/data2/jose/data_autoria/'
 train = root+"train"
 test = root+"test"
 vocab = root+"vocabulario"
@@ -205,7 +205,7 @@ for clf in classifyer:
 	print(Classify.name)	
 	#print(Classify.evaluate_dev(x_test,y_test))
 	print(Classify.evaluate_StratifiedKFold(clf))
-	#print(Classify.evaluate(clf))	
+	#print(Classify.evaluate(clf))
 
 
 '''

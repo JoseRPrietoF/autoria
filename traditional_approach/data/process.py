@@ -36,7 +36,7 @@ class canon60Dataset():
 
             author = content[0].split(";")[0][2:]
             text = content[1:]
-            #text = [x.replace("\n", " {}".format(NL)) for x in text]
+            # text = [x.replace("\n", " {}".format(NL)) for x in text]
             text = ' '.join([x.replace("\n", " ") for x in text])
             '''
             from nltk import ngrams

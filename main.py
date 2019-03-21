@@ -17,8 +17,8 @@ fname_vocab = root_path+"vocabulario"
 MODEL = "RNN"
 # MODEL = "CNN"
 #FOR RNN
-HIDDEN_UNITS = 32
-NUM_LAYERS = 4
+HIDDEN_UNITS = 4
+NUM_LAYERS = 1
 
 
 dir_word_embeddings = '/data2/jose/word_embedding/glove-sbwc.i25.vec'
