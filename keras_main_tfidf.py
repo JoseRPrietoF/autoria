@@ -82,7 +82,9 @@ from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation
 from keras.optimizers import SGD, Adam
 from keras import backend as K
-
+from keras.layers import Dense, Dropout
+from keras.layers import Embedding
+from keras.layers import LSTM
 def f1(y_true, y_pred):
     def recall(y_true, y_pred):
         """Recall metric.
@@ -113,29 +115,39 @@ def f1(y_true, y_pred):
     recall = recall(y_true, y_pred)
     return 2*((precision*recall)/(precision+recall+K.epsilon()))
 
-# MODEL = "RNN"
+def dense():
+    model = Sequential()
+    # Dense(64) is a fully-connected layer with 64 hidden units.
+    # in the first layer, you must specify the expected input data shape:
+    # here, 20-dimensional vectors.
+    model.add(Dense(layers[0], activation='relu', input_dim=len(texts_rep_train[0])))
+    model.add(Dropout(0.5))
+    for l in layers[1:]:
+        model.add(Dense(l, activation='relu'))
+        model.add(Dropout(0.5))
+
+    model.add(Dense(n_classes, activation='softmax'))
+
+    return model
+
+
+
+MODEL = "RNN"
 # MODEL = "CNN"
-MODEL = "FF"
+# MODEL = "FF"
 #FOR RNN
 HIDDEN_UNITS = 32
 layers = [256,128,64,32]
 BATCH_SIZE = 64  # Any size is accepted
 NUM_EPOCH = 10
+timesteps = 8
 n_classes = 4
 
-model = Sequential()
-# Dense(64) is a fully-connected layer with 64 hidden units.
-# in the first layer, you must specify the expected input data shape:
-# here, 20-dimensional vectors.
-model.add(Dense(layers[0], activation='relu', input_dim=len(texts_rep_train[0])))
-model.add(Dropout(0.5))
-for l in layers[1:]:
-    model.add(Dense(l, activation='relu'))
-    model.add(Dropout(0.5))
+if MODEL == "FF":
+    model = dense()
 
-model.add(Dense(n_classes, activation='softmax'))
 
-# opt = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+# opt = SGD(lr=0.01, decay=1e-6, momentum=0.9, nes  terov=True)
 opt = Adam(lr=0.001)
 model.compile(loss='categorical_crossentropy',
               optimizer=opt,
