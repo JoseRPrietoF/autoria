@@ -151,6 +151,7 @@ class classify():
 
 
 root = '/data2/jose/data_autoria/'
+root = '../texts'
 train = root+"train"
 test = root+"test"
 vocab = root+"vocabulario"
