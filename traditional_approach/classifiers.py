@@ -26,24 +26,26 @@ import collections
 
 from data import process
 
-#dev = True
-dev = False
+dev = True
+#dev = False
 min_ngram = 1
 max_ngram = 1
 
-def evaluate_dev(texts_train, authors_train, text_test, authors_test, clf, rep):
+def evaluate_dev(texts_train, authors_train, text_test, authors_test, clf, rep, sel):
 
 	texts_rep = rep.fit_transform(texts_train)
 
-	#self.selector.fit(texts_rep,self.authors)
-	#texts_rep = self.selector.transform(texts_rep).toarray()
-
-	texts_rep = texts_rep.toarray()
-
-	clf.fit(texts_rep, authors_train)
-
 	text_test_rep = rep.transform(text_test)
-	text_test_rep = text_test_rep.toarray()
+
+	if sel != None:
+		sel.fit(texts_rep,authors_train)
+		texts_rep = sel.transform(texts_rep).toarray()
+		text_test_rep = sel.transform(text_test_rep).toarray()
+	else:
+		texts_rep = texts_rep.toarray()
+		text_test_rep = text_test_rep.toarray()
+
+	clf.fit(texts_rep, authors_train)	
 
 	pred = clf.predict(text_test_rep) 
 
@@ -51,7 +53,7 @@ def evaluate_dev(texts_train, authors_train, text_test, authors_test, clf, rep):
 	acc = accuracy_score(pred, authors_test)
 	return f1, acc
 
-def evaluate_StratifiedKFold(texts_train, authors_train, clf, rep, k = 3):
+def evaluate_StratifiedKFold(texts_train, authors_train, clf, rep, sel, k = 3):
 	
 	skf = StratifiedKFold(k)
 	skf.get_n_splits(texts_train, authors_train)
@@ -118,24 +120,28 @@ classifyer = {MLPClassifier(hidden_layer_sizes=(512,256,128, 64,32)):"MLP5"}
 for clf in classifyer:
 	for up in [1,2,3]:
 		for voc in [True,False]:
-			print(classifyer[clf])	
-			print(up)
-			print(voc)
+			for s in [True,False]:
+				print('clf: '+str(classifyer[clf]))	
+				print('n-gram: '+str(up))
+				print('vocab: '+str(voc))
+				print('SelectPercentile: '+str(s))
 
-			if voc: vocabulary = vocab
-			else: vocabulary = None
-			rep = TfidfVectorizer(ngram_range=(min_ngram,up),vocabulary=vocabulary)				
-				
-			if dev:	
-				try:
-					print(evaluate_dev(x_train, y_train, x_test, y_test, clf, rep))
-				except:
-					print('Dev pass')
-			else:
-				try:
-					print(evaluate_StratifiedKFold(x_train, y_train, clf, rep))
-				except:
-					print('StratifiedKFold pass')
+				if voc: vocabulary = vocab
+				else: vocabulary = None
+				rep = TfidfVectorizer(ngram_range=(min_ngram,up),vocabulary=vocabulary)	
+				if s: sel = SelectPercentile(chi2, percentile=10)
+				else: sel = None				
+
+				if dev:	
+					try:
+						print(evaluate_dev(x_train, y_train, x_test, y_test, clf, rep, sel))
+					except:
+						print('Dev pass')
+				else:
+					try:
+						print(evaluate_StratifiedKFold(x_train, y_train, clf, rep, sel))
+					except:
+						print('StratifiedKFold pass')
 			
 
 
