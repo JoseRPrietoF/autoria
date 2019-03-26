@@ -14,21 +14,21 @@ train_path = root_path+"train"
 test_path = root_path+"test"
 fname_vocab = root_path+"vocabulario"
 
-MODEL = "RNN"
-# MODEL = "CNN"
+# MODEL = "RNN"
+MODEL = "CNN"
 #FOR RNN
 HIDDEN_UNITS = 4
 NUM_LAYERS = 1
 
 
 dir_word_embeddings = '/data2/jose/word_embedding/glove-sbwc.i25.vec'
-OPTIMIZER = 'rms'
+OPTIMIZER = 'adam'
 EMBEDDING_DIM = 300
 MAX_SEQUENCE_LENGTH = None
-BATCH_SIZE = 16  # Any size is accepted
-DEV_SPLIT = 0.2
-NUM_EPOCH = 1000
-filters = [64,128,256,512]
+BATCH_SIZE = 64  # Any size is accepted
+DEV_SPLIT = 0.1
+NUM_EPOCH = 50
+filters = [16,32,64,128,256]
 
 X_train, X_val, X_test, y_train, y_val, y_test, embedding, n_classes, MAX_SEQUENCE_LENGTH = prepare_data(
     dir_word_embeddings, fname_vocab, train_path, test_path, EMBEDDING_DIM,
@@ -43,6 +43,7 @@ X = tf.placeholder(tf.int64, shape=[None, MAX_SEQUENCE_LENGTH])
 y = tf.placeholder(tf.int64, shape=[None, n_classes])
 is_training = tf.placeholder_with_default(False, shape=[], name='is_training')
 dropout_keep_prob = tf.placeholder_with_default(1.0, shape=())
+lr = tf.placeholder(tf.float32, shape=[])
 
 glove_weights_initializer = tf.constant_initializer(embedding)
 print(glove_weights_initializer)
@@ -56,9 +57,9 @@ print(embeddings)
 GET THE MODEL
 """
 if MODEL == "CNN":
-    logits = CNN.get_model(X, embeddings, is_training, filters=filters, n_classes=n_classes)
+    logits = CNN.get_model(X, W=embeddings, is_training=is_training, filters=filters, n_classes=n_classes)
 elif MODEL == "RNN":
-    logits = RNN.get_model(X, embeddings,dropout_keep_prob, hidden_size = HIDDEN_UNITS, n_classes=n_classes, num_layers=NUM_LAYERS)
+    logits = RNN.get_model(X, W=embeddings,dropout_keep_prob=dropout_keep_prob, hidden_size = HIDDEN_UNITS, n_classes=n_classes, num_layers=NUM_LAYERS)
 
 print(logits)
 softmax = tf.nn.softmax(logits)
@@ -67,7 +68,7 @@ num_params = np.sum([np.prod(v.get_shape().as_list()) for v in tf.trainable_vari
 
 print("{} params to train".format(num_params))
 
-train_op, loss = train_ops.train_op(logits,y, optimizer=OPTIMIZER)
+train_op, loss = train_ops.train_op(logits,y=y, learning_rate=lr, optimizer=OPTIMIZER)
 """"""
 """Test de embeddings"""
 
@@ -124,6 +125,7 @@ for epoch in range(epoch_start, NUM_EPOCH+1):
                                       y: batch_tgt,
                                       batch_size: BATCH_SIZE,
                                       is_training: True,
+                                      lr: train_ops.lr_scheduler(epoch),
                                       dropout_keep_prob: 0.5
                                   })
         loss_count += loss_result
@@ -160,12 +162,12 @@ for epoch in range(epoch_start, NUM_EPOCH+1):
                                       X: batch_x,
                                       y: batch_tgt,
                                       batch_size: BATCH_SIZE,
+                                      lr: 0.0,
                                       dropout_keep_prob: 1.0
                                   })
 
-        for i in range(len(results)):
-            acc_aux = metrics.accuracy(X=results[i], y=batch_tgt[i])
-            acc += acc_aux
+        acc_aux = metrics.accuracy(X=results[0], y=batch_tgt)
+        acc += acc_aux
 
     acc = acc / current_batch_index
     print("Acc Val epoch {} : {}".format(epoch, acc))
@@ -186,6 +188,7 @@ sess.run(test_init_op, feed_dict={
 current_batch_index = 0
 next_element = iter.get_next()
 loss_count = 0
+acc=0
 while True:
 
     try:
@@ -202,12 +205,12 @@ while True:
                            X: batch_x,
                            y: batch_tgt,
                            batch_size: BATCH_SIZE,
+                           lr: 0.0,
                            dropout_keep_prob:1.0,
                        })
 
-    for i in range(len(results)):
-        acc_aux = metrics.accuracy(X=results[i], y=batch_tgt[i])
-        acc += acc_aux
+    acc_aux = metrics.accuracy(X=results[0], y=batch_tgt)
+    acc += acc_aux
 
 acc = acc / current_batch_index
 print("----------")

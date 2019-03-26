@@ -132,9 +132,9 @@ def dense():
 
 
 
-MODEL = "RNN"
+# MODEL = "RNN"
 # MODEL = "CNN"
-# MODEL = "FF"
+MODEL = "FF"
 #FOR RNN
 HIDDEN_UNITS = 32
 layers = [256,128,64,32]

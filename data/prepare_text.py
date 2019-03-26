@@ -5,7 +5,8 @@ from sklearn.model_selection import train_test_split
 
 DEBUG_ = False
 
-def prepare_data(WE_path,FNAME_VOCAB,TEXT_DATA_DIR_TRAIN, TEXT_DATA_DIR_TEST,EMBEDDING_DIM,VALIDATION_SPLIT=0.2, MAX_SEQUENCE_LENGTH=None):
+def prepare_data(WE_path,FNAME_VOCAB,TEXT_DATA_DIR_TRAIN, TEXT_DATA_DIR_TEST,EMBEDDING_DIM,VALIDATION_SPLIT=0.2, MAX_SEQUENCE_LENGTH=None,
+                 reset_test=False):
     """
     Preparing the data and the word embeddings to the model
     :param WE_path:
@@ -15,6 +16,7 @@ def prepare_data(WE_path,FNAME_VOCAB,TEXT_DATA_DIR_TRAIN, TEXT_DATA_DIR_TEST,EMB
     :param MAX_SEQUENCE_LENGTH: Max seq. length to cut or add padding. If its None then MAX = longest length of the string
     :param EMBEDDING_DIM:
     :param VALIDATION_SPLIT:
+    :param reset_test: Merge test and train and re-split the test-train partitions
     :return:
     """
 
@@ -83,10 +85,14 @@ def prepare_data(WE_path,FNAME_VOCAB,TEXT_DATA_DIR_TRAIN, TEXT_DATA_DIR_TEST,EMB
         X_test.append(tempX)
         y_test.append(classNum[c])
 
-    # onehot
     n_values = np.max(y) + 1
+    if reset_test:
+        y.extend(y_test)
+    else:
+        y_test = np.eye(n_values)[y_test]
+    # onehot
     y = np.eye(n_values)[y]
-    y_test = np.eye(n_values)[y_test]
+
 
     print("Total data to train: {}".format(len(X)))
     if MAX_SEQUENCE_LENGTH is None:
@@ -114,6 +120,13 @@ def prepare_data(WE_path,FNAME_VOCAB,TEXT_DATA_DIR_TRAIN, TEXT_DATA_DIR_TEST,EMB
     else:
         print("Careful, DEBUG MODE ON")
 
+
+
+    if reset_test:
+        print("Restoring test partition...")
+        X.extend(X_test)
+        # y.append(y_test)
+        X, X_test, y, y_test = train_test_split(X, y, test_size=0.25, random_state=3)
 
     X = pad_sequences(X, maxlen=MAX_SEQUENCE_LENGTH)
     X_test = pad_sequences(X_test, maxlen=MAX_SEQUENCE_LENGTH)
