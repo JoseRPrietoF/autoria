@@ -270,50 +270,6 @@ class Model:
 
 
 if __name__ == "__main__":
-    layers = [8,16,32]
-    print(layers)
-    Model(layers=layers, MODEL="FF")
 
-    layers = [8, 16, 32, 64]
-    print(layers)
-    Model(layers=layers, MODEL="FF")
-
-    layers = [8, 16, 32, 64, 128]
-    print(layers)
-    Model(layers=layers, MODEL="FF")
-
-    # layers = [1024, 512, 256, 128, 64, 32]
-    # print(layers)
-    # Model(layers=layers, MODEL="FF")
-    #
-    # layers = [512, 256, 128, 64, 32]
-    # print(layers)
-    # Model(layers=layers, MODEL="FF")
-    #
-    # layers = [128, 64, 32]
-    # print(layers)
-    # Model(layers=layers, MODEL="FF")
-    #
-    # layers = [64, 32]
-    # print(layers)
-    # Model(layers=layers, MODEL="FF")
-    #
-    # layers = [32,64,128,256,512,1024]
-    # print(layers)
-    # Model(layers=layers, MODEL="FF")
-    #
-    # layers = [32, 64, 128, 256, 512]
-    # print(layers)
-    # Model(layers=layers, MODEL="FF")
-    #
-    # layers = [32, 64, 128, 256]
-    # print(layers)
-    # Model(layers=layers, MODEL="FF")
-    #
-    # layers = [32, 64, 128]
-    # print(layers)
-    # Model(layers=layers, MODEL="FF")
-    #
-    # layers = [256,128,64,32,16,8]
-    # print(layers)
-    # Model(layers=layers, MODEL="FF")
+    Model(layers=[8,16,32], MODEL="FF") # 0.59
+    Model(layers=[32, 64, 128, 256], MODEL="FF") # 0.61
