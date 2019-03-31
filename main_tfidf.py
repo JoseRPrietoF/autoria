@@ -45,9 +45,11 @@ class Model:
 
         x_train = dt_train.X
         y_train = dt_train.y
+        fnames_train = dt_train.fnames
 
         x_test = dt_test.X
         y_test = dt_test.y
+        fnames_test = dt_test.fnames
 
         # onehot
         classes = {}
@@ -72,6 +74,10 @@ class Model:
             y_train_.append(classNum[c])
 
         # To One hot
+        # num_to_author = {}
+        # for i in range(len(y_test_)):
+        #     num_to_author[i] = y_test_[i]
+        # print(num_to_author)
         n_values = np.max(y_train_) + 1
         y_test = np.eye(n_values)[y_test_]
         y_train = np.eye(n_values)[y_train_]
@@ -98,6 +104,7 @@ class Model:
         X = tf.placeholder(tf.float32, shape=[None, len(texts_rep_train[0])])
         print(X)
         y = tf.placeholder(tf.int64, shape=[None, n_classes])
+        fnames_plc = tf.placeholder(tf.string, shape=[None])
         lr = tf.placeholder(tf.float32, shape=[])
         is_training = tf.placeholder_with_default(False, shape=[], name='is_training')
         dropout_keep_prob = tf.placeholder_with_default(1.0, shape=())
@@ -123,13 +130,13 @@ class Model:
         """"""
         """Test de embeddings"""
 
-        train_dataset = tf.data.Dataset.from_tensor_slices((X, y)).batch(batch_size).shuffle(buffer_size=12)
-        dev_dataset = tf.data.Dataset.from_tensor_slices((X, y)).batch(batch_size).shuffle(buffer_size=12)
-        test_dataset = tf.data.Dataset.from_tensor_slices((X, y)).batch(batch_size).shuffle(buffer_size=12)
+        train_dataset = tf.data.Dataset.from_tensor_slices((X, y, fnames_plc)).batch(batch_size).shuffle(buffer_size=12)
+        dev_dataset = tf.data.Dataset.from_tensor_slices((X, y, fnames_plc)).batch(batch_size).shuffle(buffer_size=12)
+        test_dataset = tf.data.Dataset.from_tensor_slices((X, y, fnames_plc)).batch(batch_size).shuffle(buffer_size=12)
 
-        train_data = (texts_rep_train, y_train)
+        train_data = (texts_rep_train, y_train, fnames_train)
         # dev_data = (X_val, y_val)
-        test_data = (text_test_rep, y_test)
+        test_data = (text_test_rep, y_test, fnames_test)
 
         # create a iterator of the correct shape and type
         iter = tf.data.Iterator.from_structure(train_dataset.output_types,
@@ -151,6 +158,7 @@ class Model:
             sess.run(train_init_op, feed_dict={
                 X: train_data[0],
                 y: train_data[1],
+                fnames_plc: train_data[2],
                 batch_size: BATCH_SIZE,
             }
                      )
@@ -167,7 +175,7 @@ class Model:
 
                 current_batch_index += 1
                 data = data[0]
-                batch_x, batch_tgt = data
+                batch_x, batch_tgt, batch_fnames = data
 
                 _, loss_result = sess.run([train_op, loss],
                                           feed_dict={
@@ -180,6 +188,7 @@ class Model:
 
                                           })
                 loss_count += loss_result
+
 
             loss_count = loss_count / current_batch_index
             print("Loss on epoch {} : {} - LR: {}".format(epoch, loss_count, train_ops.lr_scheduler(epoch)))
@@ -234,6 +243,7 @@ class Model:
         sess.run(test_init_op, feed_dict={
             X: test_data[0],
             y: test_data[1],
+            fnames_plc: test_data[2],
             batch_size: BATCH_SIZE,
         }
                  )
@@ -241,6 +251,7 @@ class Model:
         current_batch_index = 0
         next_element = iter.get_next()
         loss_count = 0
+        classifieds = []
         while True:
 
             try:
@@ -250,7 +261,7 @@ class Model:
 
             current_batch_index += 1
             data = data[0]
-            batch_x, batch_tgt = data
+            batch_x, batch_tgt, batch_fnames = data
 
             results = sess.run([softmax],
                                feed_dict={
@@ -263,13 +274,64 @@ class Model:
 
             acc_aux = metrics.accuracy(X=results[0], y=batch_tgt)
             acc += acc_aux
+            for i in range(len(results[0])):
+                classifieds.append(
+                    (results[0][i], batch_fnames[i], batch_tgt[i])
+                )
+
+        ### Clasificamos por documento haciendo una votacion
+        per_doc = classify_per_doc(classifieds)
         acc = acc / current_batch_index
         print("----------")
         print("Acc Val Test {}".format(acc))
+        print("Acc Val Test Per document votation {}".format(metrics.accuracy_per_doc(per_doc)))
         print("----------")
 
+def classify_per_doc(classifieds):
+    """
+    Clasificamos por documento.
+    Votacion
+    Devuelve una lista de tuplas con (hyp, gt)
+    :param classifieds:
+    :return:
+    """
+    per_doc = {}
+    new_classifieds = []
+    for i in range(len(classifieds)):
+        hyp, fname, y_gt = classifieds[i]
+        hyp = np.argmax(hyp, axis=-1)
+        y_gt = np.argmax(y_gt, axis=-1)
+        doc_name = fname.decode("utf-8").split("/")[-1]
+        doc_name = doc_name.split("_")[-1].split(".")[0]
 
+        docs = per_doc.get(doc_name, [])
+        docs.append((hyp, fname, y_gt))
+        per_doc[doc_name] = docs
+
+    for k in per_doc.keys():
+
+        counts = []
+        for a in per_doc[k]:
+            hyp, fname, y_gt = a
+            counts.append(hyp)
+        # counts = np.unique(counts, return_counts=True)
+        counts = np.bincount(counts)
+        hyp = np.argmax(counts)
+        new_classifieds.append((hyp, y_gt))
+        print("Clasificando : {} en autor {} siendo realmente del autor {}".format(k, hyp, y_gt))
+
+        print("---------------- \n\n\n")
+    print(new_classifieds)
+    return new_classifieds
 if __name__ == "__main__":
 
     Model(layers=[8,16,32], MODEL="FF") # 0.59
+    Model(layers=[8,16,32, 64], MODEL="FF")
+    Model(layers=[16, 32, 64, 128], MODEL="FF")
+    Model(layers=[16, 32, 64, 128, 256], MODEL="FF")
     Model(layers=[32, 64, 128, 256], MODEL="FF") # 0.61
+    Model(layers=[32, 64, 128, 256, 512], MODEL="FF")
+    Model(layers=[32, 64, 128, 256, 512, 1024], MODEL="FF")
+    Model(layers=[64, 128, 256, 512, 1024], MODEL="FF")
+    Model(layers=[128, 256, 512, 1024], MODEL="FF")
+    Model(layers=[256, 512, 1024], MODEL="FF")

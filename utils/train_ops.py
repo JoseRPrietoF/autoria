@@ -14,8 +14,12 @@ def train_op(X,y, learning_rate=0.001, optimizer='adam'):
 
 
 def lr_scheduler(epoch):
-    if epoch < 25:
+    if epoch < 5:
+        return 0.002
+    if epoch < 15:
         return 0.001
+    if epoch < 25:
+        return 0.0005
     if epoch < 40:
         return 0.0001
 

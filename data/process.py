@@ -14,7 +14,7 @@ class canon60Dataset():
         self.join_all = join_all
         self.path = path
         self.flists = self.get_files()
-        self.X, self.y = self.read_files()
+        self.X, self.y, self.fnames = self.read_files()
 
     def get_files(self, ext="txt"):
         """
@@ -31,6 +31,7 @@ class canon60Dataset():
         :return:
         """
         X,y = [], []
+        fnames = []
         for fname in self.flists:
             with open(fname) as f:
                 content = f.readlines()
@@ -45,8 +46,9 @@ class canon60Dataset():
 
             X.append(text)
             y.append(author)
+            fnames.append(fname)
 
-        return X,y
+        return X,y, fnames
 
 
 def read_vocab(fname):
