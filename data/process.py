@@ -1,6 +1,6 @@
 import glob
 from xml.dom import minidom
-
+import logging
 NL = "NL"
 
 class canon60Dataset():
@@ -8,8 +8,9 @@ class canon60Dataset():
     Class to handle the canon60Dataset feeding
     """
 
-    def __init__(self, path, join_all=False):
+    def __init__(self, path, join_all=False, logger=None):
 
+        self.logger = logger or logging.getLogger(__name__)
         if path.endswith('/'):
             path = path[:-1]
         self.join_all = join_all
@@ -108,6 +109,27 @@ def read_vocab(fname,join_all=True):
             i+=1
 
     return X
+
+def write_from_array(array, path):
+    """
+    Aux method to call write_output from an array of results
+    :return:
+    """
+    for a in array:
+        id, lang, type = a
+        write_output(id, lang, type, path=path)
+
+def write_output(id, lang, type, path):
+    """
+    <author id="author-id" lang="en|es" type="bot|human" gender="bot|male|female" />
+    gender not predicted at the moment
+    :param id:
+    :return:
+    """
+    str = '<author id="{}" lang="{}" type="{}" />'.format(id, lang, type)
+    with open('{}/{}'.format(path, id), 'w') as the_file:
+        the_file.write(str)
+        the_file.close()
 
 
 if __name__ == "__main__":
