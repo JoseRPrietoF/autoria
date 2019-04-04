@@ -19,9 +19,9 @@ def lr_scheduler(epoch):
     if epoch < 15:
         return 0.001
     if epoch < 25:
-        return 0.0005
-    if epoch < 40:
         return 0.0001
+    if epoch < 30:
+        return 0.00001
 
 
-    return 0.00001
+    return 0.000001

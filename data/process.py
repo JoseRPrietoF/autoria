@@ -1,4 +1,5 @@
 import glob
+from xml.dom import minidom
 
 NL = "NL"
 
@@ -50,26 +51,72 @@ class canon60Dataset():
 
         return X,y, fnames
 
+class PAN2019():
+    """
 
-def read_vocab(fname):
+    """
+
+    def __init__(self, path, txt):
+        self.path = path
+        self.txt = txt
+
+        self.X, self.y, self.fnames = self.read_files()
+
+    def read_files(self):
+        """
+        Return the contents of files with the gt
+        :return:
+        """
+        X,y, fnames = [], [], []
+        txt_path = self.path + "/" + self.txt
+        with open(txt_path) as f:
+            lines = f.readlines()
+
+        for line in lines:
+            fname, clase, gender = line.split(":::")
+            # print("{} - {} - {}".format(fname, clase, gender))
+            fname_xml = "{}/{}.xml".format(self.path, fname)
+            xmldoc = minidom.parse(fname_xml)
+            docs = xmldoc.getElementsByTagName("document")
+            text = ""
+            for txt_region in docs:
+                text += txt_region.firstChild.nodeValue + " "
+            X.append(text)
+            y.append(clase)
+            fnames.append(fname_xml)
+
+        return X,y, fnames
+
+def read_vocab(fname,join_all=True):
     """
     Return a dict with the vocab and the freqs
     :return:
     """
-    X = {"NL":0}
+    X = {}
+    i = 0
+    if not join_all:
+        X["NL"] = 0
+        i += 1
     with open(fname) as f:
         content = f.readlines()
         for line in content:
             freq, vocab = line.split()
+            ind = i
             vocab = vocab.lower()
             freq = int(freq)
-            X[vocab] = freq
+            X[vocab] = i
+            i+=1
 
     return X
 
 
 if __name__ == "__main__":
     # path = "/home/jose/Documentos/MUIARFID/PRHLT/Autoria/data/train"
-    path = "/home/jose/Documentos/MUIARFID/PRHLT/Autoria/data/test"
-
-    dt = canon60Dataset(path)
+    # path = "/home/jose/Documentos/MUIARFID/PRHLT/Autoria/data/test"
+    path = "/data2/jose/data/pan19-author-profiling-training-2019-02-18/es"
+    txt = "truth.txt"
+    # dt = canon60Dataset(path)
+    dt = PAN2019(path=path, txt=txt)
+    import numpy as np
+    classes = np.unique(dt.y, return_counts=True)
+    print(classes)

@@ -22,35 +22,45 @@ class Model:
                  BATCH_SIZE=64,
                  DEV_SPLIT=0.2,
                  NUM_EPOCH=50,
+                 min_ngram=1, up=5,max_features=None,
+                 dataset="PAN2019"
                  ):
         """
         Vars
         """
-        root_path = "/data2/jose/data_autoria/"
-        train_path = root_path + "train"
-        test_path = root_path + "test"
-        fname_vocab = root_path + "vocabulario"
-
         # MODEL = "RNN"
         # MODEL = "CNN"
+        if dataset == "canon60":
+            root_path = "/data2/jose/data_autoria/"
+            train_path = root_path + "train"
+            test_path = root_path + "test"
+            fname_vocab = root_path + "vocabulario"
+            n_classes = 4
 
-        # FOR RNN
+            #### DATOS
+            dt_train = process.canon60Dataset(train_path, join_all=True)
+            dt_test = process.canon60Dataset(test_path, join_all=True)
 
 
-        n_classes = 4
 
-        #### DATOS
-        dt_train = process.canon60Dataset(train_path, join_all=True)
-        dt_test = process.canon60Dataset(test_path, join_all=True)
+
+        elif dataset == "PAN2019":
+            ## PAN
+            path = "/data2/jose/data/pan19-author-profiling-training-2019-02-18/es"
+            txt_train = "truth-train.txt"
+            txt_dev = "truth-dev.txt"
+            dt_train = process.PAN2019(path=path, txt=txt_train)
+            dt_test = process.PAN2019(path=path, txt=txt_dev)
+            n_classes = 2 # bot or not bot
 
         x_train = dt_train.X
         y_train = dt_train.y
-        fnames_train = dt_train.fnames
 
         x_test = dt_test.X
         y_test = dt_test.y
-        fnames_test = dt_test.fnames
 
+        fnames_train = dt_train.fnames
+        fnames_test = dt_test.fnames
         # onehot
         classes = {}
 
@@ -82,12 +92,19 @@ class Model:
         y_test = np.eye(n_values)[y_test_]
         y_train = np.eye(n_values)[y_train_]
 
-        rep = TfidfVectorizer()
+
+        if max_features:
+
+            rep = TfidfVectorizer(ngram_range=(min_ngram,up),max_features=max_features)
+        else:
+            rep = TfidfVectorizer(ngram_range=(min_ngram,up))
+
         texts_rep_train = rep.fit_transform(x_train)
         texts_rep_train = texts_rep_train.toarray()
 
         text_test_rep = rep.transform(x_test)
         text_test_rep = text_test_rep.toarray()
+        print(texts_rep_train.shape)
 
         del dt_train
         del dt_test
@@ -118,7 +135,7 @@ class Model:
             logits = RNN.get_model(X, dropout_keep_prob, hidden_size=HIDDEN_UNITS, n_classes=n_classes,
                                    num_layers=NUM_LAYERS)
         elif MODEL == "FF":
-            logits = FF.get_model(X, dropout_keep_prob, is_training=is_training, layers=layers)
+            logits = FF.get_model(X, dropout_keep_prob, is_training=is_training, layers=layers, n_classes=n_classes)
         print(logits)
         softmax = tf.nn.softmax(logits)
 
@@ -134,8 +151,8 @@ class Model:
         dev_dataset = tf.data.Dataset.from_tensor_slices((X, y, fnames_plc)).batch(batch_size).shuffle(buffer_size=12)
         test_dataset = tf.data.Dataset.from_tensor_slices((X, y, fnames_plc)).batch(batch_size).shuffle(buffer_size=12)
 
+
         train_data = (texts_rep_train, y_train, fnames_train)
-        # dev_data = (X_val, y_val)
         test_data = (text_test_rep, y_test, fnames_test)
 
         # create a iterator of the correct shape and type
@@ -184,7 +201,7 @@ class Model:
                                               lr: train_ops.lr_scheduler(epoch),
                                               batch_size: BATCH_SIZE,
                                               is_training: True,
-                                              dropout_keep_prob: 0.5,
+                                              dropout_keep_prob: 0.3,
 
                                           })
                 loss_count += loss_result
@@ -278,13 +295,14 @@ class Model:
                 classifieds.append(
                     (results[0][i], batch_fnames[i], batch_tgt[i])
                 )
-
-        ### Clasificamos por documento haciendo una votacion
-        per_doc = classify_per_doc(classifieds)
+        if dataset == "canon60":
+            ### Clasificamos por documento haciendo una votacion
+            per_doc = classify_per_doc(classifieds)
         acc = acc / current_batch_index
         print("----------")
         print("Acc Val Test {}".format(acc))
-        print("Acc Val Test Per document votation {}".format(metrics.accuracy_per_doc(per_doc)))
+        if dataset == "canon60":
+            print("Acc Val Test Per document votation {}".format(metrics.accuracy_per_doc(per_doc)))
         print("----------")
 
 def classify_per_doc(classifieds):
@@ -321,17 +339,19 @@ def classify_per_doc(classifieds):
         print("Clasificando : {} en autor {} siendo realmente del autor {}".format(k, hyp, y_gt))
 
         print("---------------- \n\n\n")
-    print(new_classifieds)
     return new_classifieds
 if __name__ == "__main__":
 
-    Model(layers=[8,16,32], MODEL="FF") # 0.59
-    Model(layers=[8,16,32, 64], MODEL="FF")
-    Model(layers=[16, 32, 64, 128], MODEL="FF")
-    Model(layers=[16, 32, 64, 128, 256], MODEL="FF")
-    Model(layers=[32, 64, 128, 256], MODEL="FF") # 0.61
-    Model(layers=[32, 64, 128, 256, 512], MODEL="FF")
-    Model(layers=[32, 64, 128, 256, 512, 1024], MODEL="FF")
-    Model(layers=[64, 128, 256, 512, 1024], MODEL="FF")
-    Model(layers=[128, 256, 512, 1024], MODEL="FF")
-    Model(layers=[256, 512, 1024], MODEL="FF")
+    # Model(layers=[8,16,32], MODEL="FF", min_ngram=1, up=3) # 0.59
+    # Model(layers=[8,16,32, 64], MODEL="FF", min_ngram=1, up=3)
+    # Model(layers=[16, 32, 64, 128], MODEL="FF", min_ngram=1, up=3)
+    # Model(layers=[16, 32, 64, 128, 256], MODEL="FF", min_ngram=1, up=3)
+    Model(layers=[32, 64], MODEL="FF", min_ngram=1, up=7, max_features=50000, NUM_EPOCH=30) # 0.61
+    # Model(layers=[32, 64, 128, 256,512,1024], MODEL="FF", min_ngram=1, up=7, max_features=30000, NUM_EPOCH=50) # 0.61
+    # Model(filters=[32, 64, 128], MODEL="CNN", min_ngram=1, up=7, max_features=10000, NUM_EPOCH=50)
+    # Model(filters=[8,16,32], MODEL="CNN", min_ngram=1, up=3, max_features=800, NUM_EPOCH=1) # 0.61
+    # Model(layers=[32, 64, 128, 256, 512], MODEL="FF", min_ngram=1, up=3)
+    # Model(layers=[32, 64, 128, 256, 512, 1024], MODEL="FF")
+    # Model(layers=[64, 128, 256, 512, 1024], MODEL="FF")
+    # Model(layers=[128, 256, 512, 1024], MODEL="FF")
+    # Model(layers=[256, 512, 1024], MODEL="FF")
