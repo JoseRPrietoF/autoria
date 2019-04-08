@@ -69,7 +69,7 @@ class PAN2019():
         :return:
         """
         X,y, fnames = [], [], []
-        txt_path = self.path + "/" + self.txt
+        txt_path = self.txt
         with open(txt_path) as f:
             lines = f.readlines()
 

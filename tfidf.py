@@ -54,8 +54,8 @@ class Model:
         elif dataset == "PAN2019":
             ## PAN
             path = opts.i
-            txt_train = "truth-train.txt"
-            txt_dev = "truth-dev.txt"
+            txt_train = opts.file_i+"/truth-train.txt"
+            txt_dev = opts.file_i+"/truth-dev.txt"
             dt_train = process.PAN2019(path=path, txt=txt_train)
             dt_test = process.PAN2019(path=path, txt=txt_dev)
             n_classes = 2 # bot or not bot

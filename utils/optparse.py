@@ -166,7 +166,12 @@ class Arguments(object):
             type=str,
             help="""Train and test data folder with truth files""",
         )
-
+        train.add_argument(
+            "--file_i",
+            default="/home/prietofontcuberta19/datos/es",
+            type=str,
+            help="""Train and test data folder with truth files""",
+        )
         train.add_argument(
             "--epochs", default=50, type=int, help="Number of training epochs"
         )
