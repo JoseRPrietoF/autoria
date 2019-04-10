@@ -54,7 +54,7 @@ def main():
         tfidf.Model(layers=opts.layers, filters=opts.filters, MODEL=opts.model,
                         min_ngram=opts.min_ngram, up=opts.max_ngram,
                     max_features=opts.max_features, NUM_EPOCH=opts.epochs,
-                    logger=logger, dataset=opts.dataset, opts=opts)
+                    logger=logger, dataset=opts.dataset, opts=opts, DEBUG=opts.debug)
     elif opts.represent == "WE":
         logger.info("WE not implemented by the moment")
         exit()

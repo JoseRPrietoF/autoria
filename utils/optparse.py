@@ -55,6 +55,13 @@ class Arguments(object):
         general.add_argument(
             "--represent", default="tfidf", type=str, help="Representation of the data. tfidf or WE (Word embeddings)"
         )
+        general.add_argument(
+            "--num_tweets", default=100, type=int, help="Num tweets per user"
+        )
+        general.add_argument(
+            "--debug", dest="debug", type=self.str2bool, help="Run random data for  debug",
+            default=False
+        )
 
         # ----------------------------------------------------------------------
         # ----- Define processing data parameters

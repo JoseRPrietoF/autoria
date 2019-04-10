@@ -37,7 +37,7 @@ def batch_norm_layer(inp):
     return x
 
 
-def get_model(X,is_training, filters, W=None, n_classes=23, tf_idf=False):
+def get_model(X,is_training, filters, W=None, n_classes=23, tf_idf=False, logger=None):
     """
     doc here :)
     :param X:
@@ -46,27 +46,28 @@ def get_model(X,is_training, filters, W=None, n_classes=23, tf_idf=False):
     :param n_classes:
     :return:
     """
-    print("CREATING THE MODEL \n")
+    logger.info("CREATING THE MODEL \n")
     tf.logging.set_verbosity(tf.logging.FATAL)
-    print(X)
+    logger.info(X)
     if not tf_idf:
         net = tf.nn.embedding_lookup(W, X)
     else:
-        net = tf.expand_dims(X, axis=-1)  # Change the shape to [batch_size,1,,output_size]
-    print("Model representation {}".format(net))
+        net  = X
+    #     net = tf.expand_dims(X, axis=-1)  # Change the shape to [batch_size,1,,output_size]
+    logger.info("Model representation {}".format(net))
     for i, f in enumerate(filters):
-        print("Conv{}".format(i))
+        logger.info("Conv{}".format(i))
         with tf.name_scope("conv{}".format(i)):
             net = conv1d_layer(net, filters=f, kernel_size=5)
             net = max_pool1d_layer(net, ksize=[1, 2, 1, 1], strides=[1, 2, 1, 1])
             net = batch_norm_layer(tf.cast(net, dtype=tf.float32))
-            print(net)
+            logger.info(net)
 
     net = tf.layers.flatten(net)
-    print("Flatten {}".format(net))
+    logger.info("Flatten {}".format(net))
     net = tf.layers.dropout(net, 0.5, training=is_training)
     net = tf.layers.dense(net, 32)
-    print("First dense {}".format(net))
+    logger.info("First dense {}".format(net))
     net = tf.layers.dense(net, n_classes)
 
     return net

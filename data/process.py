@@ -57,10 +57,10 @@ class PAN2019():
 
     """
 
-    def __init__(self, path, txt):
+    def __init__(self, path, txt, join_all=False):
         self.path = path
         self.txt = txt
-
+        self.join_all = join_all
         self.X, self.y, self.fnames = self.read_files()
 
     def read_files(self):
@@ -80,10 +80,17 @@ class PAN2019():
             xmldoc = minidom.parse(fname_xml)
             docs = xmldoc.getElementsByTagName("document")
             text = ""
-            for txt_region in docs:
-                text += txt_region.firstChild.nodeValue + " "
-            X.append(text)
-            y.append(clase)
+            if self.join_all:
+                for txt_region in docs:
+                    text += txt_region.firstChild.nodeValue + " "
+                X.append(text)
+                y.append(clase)
+            else:
+                for txt_region in docs:
+                    text += txt_region.firstChild.nodeValue
+                    X.append(text)
+                    y.append(clase)
+
             fnames.append(fname_xml)
 
         return X,y, fnames

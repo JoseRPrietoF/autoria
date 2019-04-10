@@ -28,7 +28,8 @@ class Model:
                  min_ngram=1, up=5,max_features=None,
                  dataset="PAN2019",
                  logger=None,
-                 opts=None
+                 opts=None,
+                 DEBUG=False
                  ):
 
         """
@@ -37,82 +38,107 @@ class Model:
         logger = logger or logging.getLogger(__name__)
         # MODEL = "RNN"
         # MODEL = "CNN"
-        if dataset == "canon60":
-            root_path = opts.i
-            train_path = root_path + "train"
-            test_path = root_path + "test"
-            fname_vocab = root_path + "vocabulario"
-            n_classes = 4
+        if not DEBUG:
+            if dataset == "canon60":
+                root_path = opts.i
+                train_path = root_path + "train"
+                test_path = root_path + "test"
+                fname_vocab = root_path + "vocabulario"
+                n_classes = 4
 
-            #### DATOS
-            dt_train = process.canon60Dataset(train_path, join_all=True)
-            dt_test = process.canon60Dataset(test_path, join_all=True)
-
-
-
-
-        elif dataset == "PAN2019":
-            ## PAN
-            path = opts.i
-            txt_train = opts.file_i+"/truth-train.txt"
-            txt_dev = opts.file_i+"/truth-dev.txt"
-            dt_train = process.PAN2019(path=path, txt=txt_train)
-            dt_test = process.PAN2019(path=path, txt=txt_dev)
-            n_classes = 2 # bot or not bot
-
-        x_train = dt_train.X
-        y_train = dt_train.y
-
-        x_test = dt_test.X
-        y_test = dt_test.y
-
-        fnames_train = dt_train.fnames
-        fnames_test = dt_test.fnames
-        # onehot
-        classes = {}
-
-        for c in dt_train.y:
-            c_count = classes.get(c, 0)
-            classes[c] = c_count + 1
-        classNum = {}
-        numClass = {}
-        for i, c in enumerate(list(classes.keys())):
-            classNum[c] = i
-            numClass[i] = c
-
-        y_train_, y_test_ = [], []
-
-        for i, sentence in enumerate(y_test):
-            c = dt_test.y[i]
-            y_test_.append(classNum[c])
-
-        for i, sentence in enumerate(y_train):
-            c = dt_train.y[i]
-            y_train_.append(classNum[c])
-
-        # To One hot
-        # TODO 
-        n_values = np.max(y_train_) + 1
-        y_test = np.eye(n_values)[y_test_]
-        y_train = np.eye(n_values)[y_train_]
+                #### DATOS
+                dt_train = process.canon60Dataset(train_path, join_all=True)
+                dt_test = process.canon60Dataset(test_path, join_all=True)
 
 
-        if max_features:
 
-            rep = TfidfVectorizer(ngram_range=(min_ngram,up),max_features=max_features)
+
+            elif dataset == "PAN2019" :
+                ## PAN
+                path = opts.i
+                txt_train = opts.file_i+"/truth-train.txt"
+                txt_dev = opts.file_i+"/truth-dev.txt"
+                dt_train = process.PAN2019(path=path, txt=txt_train)
+                dt_test = process.PAN2019(path=path, txt=txt_dev)
+                n_classes = 2 # bot or not bot
+
+            x_train = dt_train.X
+            y_train = dt_train.y
+
+            x_test = dt_test.X
+            y_test = dt_test.y
+
+            fnames_train = dt_train.fnames
+            fnames_test = dt_test.fnames
+            # onehot
+            classes = {}
+
+            for c in dt_train.y:
+                c_count = classes.get(c, 0)
+                classes[c] = c_count + 1
+            classNum = {}
+            numClass = {}
+            for i, c in enumerate(list(classes.keys())):
+                classNum[c] = i
+                numClass[i] = c
+
+            y_train_, y_test_ = [], []
+
+            for i, sentence in enumerate(y_test):
+                c = dt_test.y[i]
+                y_test_.append(classNum[c])
+
+            for i, sentence in enumerate(y_train):
+                c = dt_train.y[i]
+                y_train_.append(classNum[c])
+
+            # To One hot
+            # TODO
+            n_values = np.max(y_train_) + 1
+            y_test = np.eye(n_values)[y_test_]
+            y_train = np.eye(n_values)[y_train_]
+
+            if max_features:
+
+                rep = TfidfVectorizer(ngram_range=(min_ngram,up),max_features=max_features)
+            else:
+                rep = TfidfVectorizer(ngram_range=(min_ngram,up))
+
+
+            texts_rep_train = rep.fit_transform(x_train)
+            texts_rep_train = texts_rep_train.toarray()
+
+
+            text_test_rep = rep.transform(x_test)
+            text_test_rep = text_test_rep.toarray()
+
+            del dt_train
+            del dt_test
+            if MODEL == "CNN":
+                num = opts.num_tweets
+                texts_rep_train = texts_rep_train.reshape(int(texts_rep_train.shape[0]/num), num, texts_rep_train.shape[1])
+                text_test_rep = text_test_rep.reshape(int(text_test_rep.shape[0]/num), num, text_test_rep.shape[1])
+
         else:
-            rep = TfidfVectorizer(ngram_range=(min_ngram,up))
+            logger.info(" --------------- DEBUG ON ------------------")
+            n_classes = 2
+            texts_rep_train = np.random.randn(2080, 100, 10000)
+            text_test_rep = np.random.randn(920, 100, 10000)
+            y_train = np.eye(n_classes)[np.random.choice(n_classes, 2080)]
+            y_test = np.eye(n_classes)[np.random.choice(n_classes, 920)]
 
-        texts_rep_train = rep.fit_transform(x_train)
-        texts_rep_train = texts_rep_train.toarray()
+            alphabet = list('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
+            np_alphabet = np.array(alphabet, dtype="|S1")
+            fnames_train = np.random.choice(np_alphabet, [2080, 15])
+            fnames_test = np.random.choice(np_alphabet, [920, 15])
+            logger.info("Random data created")
+            logger.info("texts_rep_train: {}".format(texts_rep_train.shape))
+            logger.info("Fnames_train: {}".format(fnames_train.shape))
+            logger.info("y_train: {}".format(y_train.shape))
 
-        text_test_rep = rep.transform(x_test)
-        text_test_rep = text_test_rep.toarray()
 
-        del dt_train
-        del dt_test
 
-        # X_train, X_val, X_test, y_train, y_val, y_test, MAX_SEQUENCE_LENGTH = prepare_data(
+            # X_train, X_val, X_test, y_train, y_val, y_test, MAX_SEQUENCE_LENGTH = prepare_data(
         #     dir_word_embeddings, fname_vocab, train_path, test_path, EMBEDDING_DIM,
         #     VALIDATION_SPLIT=DEV_SPLIT, MAX_SEQUENCE_LENGTH=MAX_SEQUENCE_LENGTH
         # )
@@ -121,7 +147,10 @@ class Model:
         """""""""""""""""""""""""""""""""""
 
         batch_size = tf.placeholder(tf.int64, name="batch_size")
-        X = tf.placeholder(tf.float32, shape=[None, len(texts_rep_train[0])])
+        if MODEL == "CNN":
+            X = tf.placeholder(tf.float32, shape=[None, texts_rep_train.shape[1], texts_rep_train.shape[2]])
+        else:
+            X = tf.placeholder(tf.float32, shape=[None, len(texts_rep_train[0])])
         print(X)
         y = tf.placeholder(tf.int64, shape=[None, n_classes])
         fnames_plc = tf.placeholder(tf.string, shape=[None])
@@ -133,7 +162,7 @@ class Model:
         GET THE MODEL
         """
         if MODEL == "CNN":
-            logits = CNN.get_model(X, is_training=is_training, filters=filters, n_classes=n_classes, tf_idf=True)
+            logits = CNN.get_model(X, is_training=is_training, filters=filters, n_classes=n_classes, tf_idf=True, logger=logger)
         elif MODEL == "RNN":
             logits = RNN.get_model(X, dropout_keep_prob, hidden_size=HIDDEN_UNITS, n_classes=n_classes,
                                    num_layers=NUM_LAYERS)
