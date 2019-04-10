@@ -122,19 +122,21 @@ class Model:
         else:
             logger.info(" --------------- DEBUG ON ------------------")
             n_classes = 2
-            texts_rep_train = np.random.randn(2080, 100, 10000)
-            text_test_rep = np.random.randn(920, 100, 10000)
-            y_train = np.eye(n_classes)[np.random.choice(n_classes, 2080)]
-            y_test = np.eye(n_classes)[np.random.choice(n_classes, 920)]
+            n_vcab = 10000
+            train_data = 128
+            dev_data = 50
+            texts_rep_train = np.random.randn(train_data, 100, n_vcab)
+            text_test_rep = np.random.randn(dev_data, 100, n_vcab)
+            y_train = np.eye(n_classes)[np.random.choice(n_classes, train_data)]
+            y_test = np.eye(n_classes)[np.random.choice(n_classes, dev_data)]
 
             alphabet = list('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
             np_alphabet = np.array(alphabet, dtype="|S1")
-            fnames_train = np.random.choice(np_alphabet, [2080, 15])
-            fnames_test = np.random.choice(np_alphabet, [920, 15])
+            fnames_train = np.random.choice(np_alphabet, [train_data])
+            fnames_test = np.random.choice(np_alphabet, [dev_data])
             logger.info("Random data created")
-            logger.info("texts_rep_train: {}".format(texts_rep_train.shape))
-            logger.info("Fnames_train: {}".format(fnames_train.shape))
-            logger.info("y_train: {}".format(y_train.shape))
+        logger.info("texts_rep_train: {}".format(texts_rep_train.shape))
+        logger.info("y_train: {}".format(y_train.shape))
 
 
 
@@ -148,15 +150,15 @@ class Model:
 
         batch_size = tf.placeholder(tf.int64, name="batch_size")
         if MODEL == "CNN":
-            X = tf.placeholder(tf.float32, shape=[None, texts_rep_train.shape[1], texts_rep_train.shape[2]])
+            X = tf.placeholder(tf.float32, shape=[None, texts_rep_train.shape[1], texts_rep_train.shape[2]], name="X")
         else:
-            X = tf.placeholder(tf.float32, shape=[None, len(texts_rep_train[0])])
+            X = tf.placeholder(tf.float32, shape=[None, len(texts_rep_train[0])], name="X")
         print(X)
-        y = tf.placeholder(tf.int64, shape=[None, n_classes])
-        fnames_plc = tf.placeholder(tf.string, shape=[None])
-        lr = tf.placeholder(tf.float32, shape=[])
+        y = tf.placeholder(tf.int64, shape=[None, n_classes], name="y")
+        fnames_plc = tf.placeholder(tf.string, shape=[None], name="fnames_plc")
+        lr = tf.placeholder(tf.float32, shape=[], name="lr")
         is_training = tf.placeholder_with_default(False, shape=[], name='is_training')
-        dropout_keep_prob = tf.placeholder_with_default(1.0, shape=())
+        dropout_keep_prob = tf.placeholder_with_default(1.0, shape=(), name="dropout")
 
         """
         GET THE MODEL
@@ -236,8 +238,8 @@ class Model:
                                               dropout_keep_prob: 0.3,
 
                                           })
+                # print("Loss: {}".format(loss_result))
                 loss_count += loss_result
-
 
             loss_count = loss_count / current_batch_index
             logger.info("Loss on epoch {} : {} - LR: {}".format(epoch, loss_count, train_ops.lr_scheduler(epoch)))

@@ -11,7 +11,8 @@ def get_model(X, dropout_keep_prob, W=None, hidden_size = 32, num_layers=2 , n_c
 
     else:
         print("From tfidf")
-        net = tf.expand_dims(X, axis=-1)  # Change the shape to [batch_size,1,max_length,output_size]
+        net = X
+        # net = tf.expand_dims(X, axis=-1)  # Change the shape to [batch_size,1,max_length,output_size]
     net = tf.cast(net, tf.float32)
     print("Model representation {}".format(net))
     x_len = tf.cast(tf.reduce_sum(tf.sign(X), 1), tf.int32)

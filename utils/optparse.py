@@ -77,14 +77,14 @@ class Arguments(object):
 
         data.add_argument(
             "--filters",
-            default=[32,64,128],
-            type=type([]),
+            default='32,64,128',
+            type=str,
             help="Filters for the CNN network",
         )
         data.add_argument(
             "--layers",
-            default=[32,64,128],
-            type=type([]),
+            default='32,64,128',
+            type=str,
             help="Layers for the FF or RNN network",
         )
         data.add_argument(
@@ -312,6 +312,12 @@ class Arguments(object):
         self.opts, unkwn = self.parser.parse_known_args()
         self._check_out_dir(self.opts.work_dir)
         self.output_dir(self.opts.o)
+        layers = self.opts.layers
+        filters = self.opts.filters
+
+        self.opts.layers = [int(x) for x in layers.split(",")]
+        self.opts.filters = [int(x) for x in filters.split(",")]
+
         self.opts.log_file = self.opts.work_dir + "/" + self.opts.exp_name + ".log"
         self.opts.checkpoints = os.path.join(self.opts.work_dir, "checkpoints/")
         return self.opts

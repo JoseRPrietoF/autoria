@@ -1,4 +1,4 @@
-import glob
+import glob, random
 from xml.dom import minidom
 import logging
 NL = "NL"
@@ -73,6 +73,8 @@ class PAN2019():
         with open(txt_path) as f:
             lines = f.readlines()
 
+        random.shuffle(lines)
+
         for line in lines:
             fname, clase, gender = line.split(":::")
             # print("{} - {} - {}".format(fname, clase, gender))
@@ -89,9 +91,11 @@ class PAN2019():
                 for txt_region in docs:
                     text += txt_region.firstChild.nodeValue
                     X.append(text)
-                    y.append(clase)
+                y.append(clase)
+
 
             fnames.append(fname_xml)
+
 
         return X,y, fnames
 
