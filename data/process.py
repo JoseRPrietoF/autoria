@@ -74,7 +74,7 @@ class PAN2019():
             lines = f.readlines()
 
         random.shuffle(lines)
-
+        print("Join ALL: {}".format(self.join_all))
         for line in lines:
             fname, clase, gender = line.split(":::")
             # print("{} - {} - {}".format(fname, clase, gender))

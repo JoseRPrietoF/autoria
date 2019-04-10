@@ -47,8 +47,8 @@ class Model:
                 n_classes = 4
 
                 #### DATOS
-                dt_train = process.canon60Dataset(train_path, join_all=True)
-                dt_test = process.canon60Dataset(test_path, join_all=True)
+                dt_train = process.canon60Dataset(train_path, join_all= False)
+                dt_test = process.canon60Dataset(test_path, join_all= False)
 
 
 
@@ -58,8 +58,8 @@ class Model:
                 path = opts.i
                 txt_train = opts.file_i+"/truth-train.txt"
                 txt_dev = opts.file_i+"/truth-dev.txt"
-                dt_train = process.PAN2019(path=path, txt=txt_train)
-                dt_test = process.PAN2019(path=path, txt=txt_dev)
+                dt_train = process.PAN2019(path=path, txt=txt_train, join_all= MODEL == "FF")
+                dt_test = process.PAN2019(path=path, txt=txt_dev, join_all= MODEL == "FF")
                 n_classes = 2 # bot or not bot
 
             x_train = dt_train.X
