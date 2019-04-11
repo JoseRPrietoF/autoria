@@ -206,7 +206,8 @@ class Arguments(object):
         )
         test.add_argument(
             "--o",
-            default="/data2/jose/data/pan19-author-profiling-training-2019-02-18/output_es",
+            #default="/data2/jose/data/pan19-author-profiling-training-2019-02-18/output", #set
+            default="./output", #set
             type=str,
             help="""Test output folder. It will be created if doesnt exists""",
         )

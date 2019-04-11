@@ -128,16 +128,16 @@ def write_from_array(array, path):
     """
     for a in array:
         id, lang, type = a
-        write_output(id, lang, type, path=path)
+        write_output(id, lang, type, path=path) #set        path+'/'+lang
 
-def write_output(id, lang, type, path):
+def write_output(id, lang, type, path, gender=type): #set
     """
-    <author id="author-id" lang="en|es" type="bot|human" gender="bot|male|female" />
+    <author id="author-id" lang="en|es" type="bot|human" gender="bot|male|female" /> 
     gender not predicted at the moment
     :param id:
     :return:
     """
-    str = '<author id="{}" lang="{}" type="{}" />'.format(id, lang, type)
+    str = '<author id="{}" lang="{}" type="{}" gender="{}"/>'.format(id, lang, type, gender) #set
     with open('{}/{}'.format(path, id), 'w') as the_file:
         the_file.write(str)
         the_file.close()

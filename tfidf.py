@@ -10,6 +10,8 @@ from utils import metrics
 from sklearn.feature_extraction.text import TfidfVectorizer
 import logging
 from utils import sesions
+from sklearn.preprocessing import LabelEncoder
+from keras.utils.np_utils import to_categorical
 
 
 class Model:
@@ -70,6 +72,8 @@ class Model:
 
             fnames_train = dt_train.fnames
             fnames_test = dt_test.fnames
+            
+            '''
             # onehot
             classes = {}
 
@@ -97,7 +101,19 @@ class Model:
             n_values = np.max(y_train_) + 1
             y_test = np.eye(n_values)[y_test_]
             y_train = np.eye(n_values)[y_train_]
-
+			'''
+			
+            labelencoder = LabelEncoder()  #set
+            y_train_ = np.array(y_train).astype(str) 
+            y_test_ = np.array(y_test).astype(str) 
+            labelencoder.fit(y_train_)
+            y_train_ = labelencoder.transform(y_train_)
+            y_test_ = labelencoder.transform(y_test_)
+            n_values = len(np.unique(y_train_))
+            # To One hot
+            y_train = to_categorical(y_train_, n_values)
+            y_test = to_categorical(y_test_, n_values)
+			
             if max_features:
 
                 rep = TfidfVectorizer(ngram_range=(min_ngram,up),max_features=max_features)
@@ -332,9 +348,10 @@ class Model:
                     (results[0][i], batch_fnames[i], batch_tgt[i])
                 )
                 # to write
-                hyp = np.argmax(results[0][i], axis=-1)
+                hyp = [np.argmax(results[0][i], axis=-1)]
+                hyp = labelencoder.inverse_transform(hyp)[0] #real label   #set
                 doc_name = batch_fnames[i].decode("utf-8").split("/")[-1]
-                #TODO change opts.hyp for the real label
+                #Ready - TODO change opts.hyp for the real label
                 classifieds_to_write.append((
                     doc_name, opts.lang, hyp
                 ))
