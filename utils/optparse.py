@@ -71,10 +71,6 @@ class Arguments(object):
             "--model", default="FF", type=str, help="FF (MLP), CNN or RNN network model"
         )
 
-        general.add_argument(
-            "--lang", default="es", type=str, help="language es/en"
-        )
-
         data.add_argument(
             "--filters",
             default='32,64,128',
@@ -169,13 +165,13 @@ class Arguments(object):
         )
         train.add_argument(
             "--i",
-            default="/data2/jose/data/pan19-author-profiling-training-2019-02-18/es",
+            default="/data2/jose/data/pan19-author-profiling-training-2019-02-18",
             type=str,
             help="""Train and test data folder with truth files""",
         )
         train.add_argument(
             "--file_i",
-            default="/home/prietofontcuberta19/datos/es",
+            default="/home/prietofontcuberta19/datos",
             type=str,
             help="""Train and test data folder with truth files""",
         )
@@ -312,7 +308,10 @@ class Arguments(object):
 
         self.opts, unkwn = self.parser.parse_known_args()
         self._check_out_dir(self.opts.work_dir)
-        self.output_dir(self.opts.o)
+
+        self.output_dir(self.opts.o+'/es')
+        self.output_dir(self.opts.o+'/en')
+        #self.opts.i += '/'+self.opts.lang
         layers = self.opts.layers
         filters = self.opts.filters
 

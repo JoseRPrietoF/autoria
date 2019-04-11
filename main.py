@@ -51,10 +51,12 @@ def main():
     logger.info("Data representation as : {}".format(opts.represent))
 
     if opts.represent == "tfidf":
-        tfidf.Model(layers=opts.layers, filters=opts.filters, MODEL=opts.model,
+        for l in ['es','en']:
+
+            tfidf.Model(layers=opts.layers, filters=opts.filters, MODEL=opts.model,
                         min_ngram=opts.min_ngram, up=opts.max_ngram,
                     max_features=opts.max_features, NUM_EPOCH=opts.epochs,
-                    logger=logger, dataset=opts.dataset, opts=opts, DEBUG=opts.debug)
+                    logger=logger, dataset=opts.dataset, opts=opts, DEBUG=opts.debug, lang=l)
     elif opts.represent == "WE":
         logger.info("WE not implemented by the moment")
         exit()

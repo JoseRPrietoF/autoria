@@ -31,7 +31,7 @@ class Model:
                  dataset="PAN2019",
                  logger=None,
                  opts=None,
-                 DEBUG=False
+                 DEBUG=False, lang="es"
                  ):
 
         """
@@ -57,9 +57,9 @@ class Model:
 
             elif dataset == "PAN2019" :
                 ## PAN
-                path = opts.i
-                txt_train = opts.file_i+"/truth-train.txt"
-                txt_dev = opts.file_i+"/truth-dev.txt"
+                path = opts.i+'/'+lang
+                txt_train = opts.file_i+"/{}/truth-train.txt".format(lang)
+                txt_dev = opts.file_i+"/{}/truth-dev.txt".format(lang)
                 dt_train = process.PAN2019(path=path, txt=txt_train, join_all= MODEL == "FF")
                 dt_test = process.PAN2019(path=path, txt=txt_dev, join_all= MODEL == "FF")
                 n_classes = 2 # bot or not bot
@@ -353,7 +353,7 @@ class Model:
                 doc_name = batch_fnames[i].decode("utf-8").split("/")[-1]
                 #Ready - TODO change opts.hyp for the real label
                 classifieds_to_write.append((
-                    doc_name, opts.lang, hyp
+                    doc_name, lang, hyp
                 ))
 
         if dataset == "canon60":

@@ -128,9 +128,9 @@ def write_from_array(array, path):
     """
     for a in array:
         id, lang, type = a
-        write_output(id, lang, type, path=path) #set        path+'/'+lang
+        write_output(id, lang, type, path=path, gender=type) #set        path+'/'+lang
 
-def write_output(id, lang, type, path, gender=type): #set
+def write_output(id, lang, type, path, gender): #set
     """
     <author id="author-id" lang="en|es" type="bot|human" gender="bot|male|female" /> 
     gender not predicted at the moment
