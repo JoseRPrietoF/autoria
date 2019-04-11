@@ -167,7 +167,13 @@ class Arguments(object):
             "--i",
             default="/data2/jose/data/pan19-author-profiling-training-2019-02-18",
             type=str,
-            help="""Train and test data folder with truth files""",
+            help="""Test data folder with files""",
+        )
+        train.add_argument(
+            "--tr_data",
+            default="/media/training-datasets/author-profiling/pan19-author-profiling-training-dataset-2019-02-18",
+            type=str,
+            help="""Train data folder with files""",
         )
         train.add_argument(
             "--file_i",

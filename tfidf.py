@@ -24,7 +24,7 @@ class Model:
                  NUM_LAYERS=2,
                  do_val=False,
                  OPTIMIZER='adam',
-                 BATCH_SIZE=64,
+
                  DEV_SPLIT=0.2,
                  NUM_EPOCH=50,
                  min_ngram=1, up=5,max_features=None,
@@ -37,6 +37,7 @@ class Model:
         """
         Vars
         """
+        BATCH_SIZE=opts.batch_size
         logger = logger or logging.getLogger(__name__)
         # MODEL = "RNN"
         # MODEL = "CNN"
@@ -57,18 +58,26 @@ class Model:
 
             elif dataset == "PAN2019" :
                 ## PAN
-                path = opts.i+'/'+lang
-                txt_train = opts.file_i+"/{}/truth-train.txt".format(lang)
-                txt_dev = opts.file_i+"/{}/truth-dev.txt".format(lang)
-                dt_train = process.PAN2019(path=path, txt=txt_train, join_all= MODEL == "FF")
-                dt_test = process.PAN2019(path=path, txt=txt_dev, join_all= MODEL == "FF")
+                path = opts.tr_data+'/'+lang
+                path_test = opts.i+'/'+lang
+                if do_val:
+                    txt_train = opts.file_i+"/{}/truth-train.txt".format(lang)
+                    txt_dev = opts.file_i+"/{}/truth-dev.txt".format(lang)
+                    dt_train = process.PAN2019(path=path, txt=txt_train, join_all= MODEL == "FF")
+                    dt_dev = process.PAN2019(path=path, txt=txt_dev, join_all= MODEL == "FF")
+                else:
+                   txt_train = opts.file_i+"/{}/truth.txt".format(lang)
+                   dt_train = process.PAN2019(path=path, txt=txt_train, join_all= MODEL == "FF")
+                
+                dt_test = process.PAN2019_Test(path=path_test, join_all= MODEL == "FF")
                 n_classes = 2 # bot or not bot
+                
 
             x_train = dt_train.X
             y_train = dt_train.y
 
             x_test = dt_test.X
-            y_test = dt_test.y
+            # y_test = dt_test.y
 
             fnames_train = dt_train.fnames
             fnames_test = dt_test.fnames
@@ -105,14 +114,14 @@ class Model:
 			
             labelencoder = LabelEncoder()  #set
             y_train_ = np.array(y_train).astype(str) 
-            y_test_ = np.array(y_test).astype(str) 
+            # y_test_ = np.array(y_test).astype(str) 
             labelencoder.fit(y_train_)
             y_train_ = labelencoder.transform(y_train_)
-            y_test_ = labelencoder.transform(y_test_)
+            # y_test_ = labelencoder.transform(y_test_)
             n_values = len(np.unique(y_train_))
             # To One hot
             y_train = to_categorical(y_train_, n_values)
-            y_test = to_categorical(y_test_, n_values)
+            # y_test = to_categorical(y_test_, n_values)
 			
             if max_features:
 
@@ -199,20 +208,25 @@ class Model:
 
         train_dataset = tf.data.Dataset.from_tensor_slices((X, y, fnames_plc)).batch(batch_size).shuffle(buffer_size=12)
         dev_dataset = tf.data.Dataset.from_tensor_slices((X, y, fnames_plc)).batch(batch_size).shuffle(buffer_size=12)
-        test_dataset = tf.data.Dataset.from_tensor_slices((X, y, fnames_plc)).batch(batch_size).shuffle(buffer_size=12)
+        test_dataset = tf.data.Dataset.from_tensor_slices((X, fnames_plc)).batch(batch_size).shuffle(buffer_size=12)
 
 
         train_data = (texts_rep_train, y_train, fnames_train)
-        test_data = (text_test_rep, y_test, fnames_test)
+        # dev_data = (text_test_rep, y_test, fnames_test)
+        test_data = (text_test_rep, fnames_test)
+        print(text_test_rep.shape)
+        print(len(fnames_test))
 
         # create a iterator of the correct shape and type
         iter = tf.data.Iterator.from_structure(train_dataset.output_types,
                                                train_dataset.output_shapes)
+        iter_test = tf.data.Iterator.from_structure(test_dataset.output_types,
+                                               test_dataset.output_shapes)
 
         # create the initialisation operations
         train_init_op = iter.make_initializer(train_dataset)
         dev_init_op = iter.make_initializer(dev_dataset)
-        test_init_op = iter.make_initializer(test_dataset)
+        test_init_op = iter_test.make_initializer(test_dataset)
 
         epoch_start = 0
         ## Train
@@ -305,18 +319,20 @@ class Model:
         """
         ----------------- TEST -----------------
         """
+        Y_FALSA = np.random.randint(1, size=(BATCH_SIZE, n_classes))
+        print(Y_FALSA.shape)
         logger.info("\n-- TEST --\n")
 
         sess.run(test_init_op, feed_dict={
             X: test_data[0],
-            y: test_data[1],
-            fnames_plc: test_data[2],
+            y: Y_FALSA,
+            fnames_plc: test_data[1],
             batch_size: BATCH_SIZE,
         }
                  )
 
         current_batch_index = 0
-        next_element = iter.get_next()
+        next_element = iter_test.get_next()
         loss_count = 0
         classifieds = []
         classifieds_to_write = []
@@ -329,82 +345,34 @@ class Model:
 
             current_batch_index += 1
             data = data[0]
-            batch_x, batch_tgt, batch_fnames = data
+            batch_x, batch_fnames = data
 
             results = sess.run([softmax],
                                feed_dict={
                                    X: batch_x,
-                                   y: batch_tgt,
+                                   y: Y_FALSA,
                                    batch_size: BATCH_SIZE,
                                    dropout_keep_prob: 1.0,
                                    lr: train_ops.lr_scheduler(1)
                                })
 
-            acc_aux = metrics.accuracy(X=results[0], y=batch_tgt)
-            acc += acc_aux
+
+
             for i in range(len(results[0])):
-                # to vote
-                classifieds.append(
-                    (results[0][i], batch_fnames[i], batch_tgt[i])
-                )
                 # to write
                 hyp = [np.argmax(results[0][i], axis=-1)]
                 hyp = labelencoder.inverse_transform(hyp)[0] #real label   #set
                 doc_name = batch_fnames[i].decode("utf-8").split("/")[-1]
-                #Ready - TODO change opts.hyp for the real label
+
                 classifieds_to_write.append((
                     doc_name, lang, hyp
                 ))
 
-        if dataset == "canon60":
-            ### Clasificamos por documento haciendo una votacion
-            per_doc = classify_per_doc(classifieds, logger=logger)
-        acc = acc / current_batch_index
         logger.info("----------")
-        logger.info("Acc Val Test {}".format(acc))
-        if dataset == "canon60":
-            logger.info("Acc Val Test Per document votation {}".format(metrics.accuracy_per_doc(per_doc)))
-            logger.info("----------")
-
-
-        logger.info("Writting results in output dir {}".format(opts.o))
-        process.write_from_array(classifieds_to_write, opts.o)
+        logger.info("Writting results in output dir {}".format("{}/{}".format(opts.o, lang)))
+        process.write_from_array(classifieds_to_write, "{}/{}".format(opts.o, lang))
         # [print(x) for x in classifieds_to_write]
-def classify_per_doc(classifieds, logger=None):
-    """
-    Clasificamos por documento.
-    Votacion
-    Devuelve una lista de tuplas con (hyp, gt)
-    :param classifieds:
-    :return:
-    """
-    per_doc = {}
-    new_classifieds = []
-    for i in range(len(classifieds)):
-        hyp, fname, y_gt = classifieds[i]
-        hyp = np.argmax(hyp, axis=-1)
-        y_gt = np.argmax(y_gt, axis=-1)
-        doc_name = fname.decode("utf-8").split("/")[-1]
-        doc_name = doc_name.split("_")[-1].split(".")[0]
 
-        docs = per_doc.get(doc_name, [])
-        docs.append((hyp, fname, y_gt))
-        per_doc[doc_name] = docs
-
-    for k in per_doc.keys():
-
-        counts = []
-        for a in per_doc[k]:
-            hyp, fname, y_gt = a
-            counts.append(hyp)
-        # counts = np.unique(counts, return_counts=True)
-        counts = np.bincount(counts)
-        hyp = np.argmax(counts)
-        new_classifieds.append((hyp, y_gt))
-        logger.info("Clasificando : {} en autor {} siendo realmente del autor {}".format(k, hyp, y_gt))
-
-        logger.info("---------------- \n\n\n")
-    return new_classifieds
 if __name__ == "__main__":
 
     # Model(layers=[8,16,32], MODEL="FF", min_ngram=1, up=3) # 0.59

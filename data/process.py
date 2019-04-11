@@ -99,6 +99,59 @@ class PAN2019():
 
         return X,y, fnames
 
+
+
+
+class PAN2019_Test():
+    """
+
+    """
+
+    def __init__(self, path, join_all=False):
+        self.path = path
+        self.join_all = join_all
+        self.files = self.get_files()
+        self.X, self.fnames = self.read_files()
+
+    def read_files(self):
+        """
+        Return the contents of files with the gt
+        :return:
+        """
+        X, fnames = [], []
+
+        #print("Join ALL: {}".format(self.join_all))
+        for fname_xml in self.files:
+
+            xmldoc = minidom.parse(fname_xml)
+            docs = xmldoc.getElementsByTagName("document")
+            text = ""
+            if self.join_all:
+                for txt_region in docs:
+                    text += txt_region.firstChild.nodeValue + " "
+                X.append(text)
+
+            else:
+                for txt_region in docs:
+                    text += txt_region.firstChild.nodeValue
+                    X.append(text)
+
+
+
+            fnames.append(fname_xml)
+
+
+        return X, fnames
+
+    def get_files(self, ext="xml"):
+        """
+        Return the files on self.path with terminates on ext
+        :param ext:
+        :return:
+        """
+        f = glob.glob(self.path+"/*{}".format(ext))
+        return f
+
 def read_vocab(fname,join_all=True):
     """
     Return a dict with the vocab and the freqs
