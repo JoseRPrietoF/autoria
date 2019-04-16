@@ -19,10 +19,6 @@ class Model:
     def __init__(self,
                  x_train, y_train, x_test, y_test,fnames_train,fnames_test,
                  layers=[512, 256, 128, 64, 32],
-                 filters=[64, 128, 256, 512],
-                 MODEL="FF",
-                 HIDDEN_UNITS=32,
-                 NUM_LAYERS=2,
                  OPTIMIZER='adam',
                  logger=None,
                  opts=None,
@@ -51,11 +47,6 @@ class Model:
         y_train = to_categorical(y_train_, n_values)
         y_test = to_categorical(y_test_, n_values)
 
-        if MODEL == "CNN":
-            num = opts.num_tweets
-            x_train = x_train.reshape(int(x_train.shape[0]/num), num, x_train.shape[1])
-            x_test = x_test.reshape(int(x_test.shape[0]/num), num, x_test.shape[1])
-
         logger.info("texts_rep_train: {}".format(x_train.shape))
         logger.info("y_train: {}".format(x_test.shape))
 
@@ -66,10 +57,8 @@ class Model:
         """""""""""""""""""""""""""""""""""
 
         batch_size = tf.placeholder(tf.int64, name="batch_size")
-        if MODEL == "CNN":
-            X = tf.placeholder(tf.float32, shape=[None, x_train.shape[1], x_train.shape[2]], name="X")
-        else:
-            X = tf.placeholder(tf.float32, shape=[None, len(x_train[0])], name="X")
+
+        X = tf.placeholder(tf.float32, shape=[None, len(x_train[0])], name="X")
         print(X)
         y = tf.placeholder(tf.int64, shape=[None, n_classes], name="y")
         fnames_plc = tf.placeholder(tf.string, shape=[None], name="fnames_plc")
@@ -80,13 +69,8 @@ class Model:
         """
         GET THE MODEL
         """
-        if MODEL == "CNN":
-            logits = CNN.get_model(X, is_training=is_training, filters=filters, n_classes=n_classes, tf_idf=True, logger=logger)
-        elif MODEL == "RNN":
-            logits = RNN.get_model(X, dropout_keep_prob, hidden_size=HIDDEN_UNITS, n_classes=n_classes,
-                                   num_layers=NUM_LAYERS)
-        elif MODEL == "FF":
-            logits = FF.get_model(X, dropout_keep_prob, is_training=is_training, layers=layers, n_classes=n_classes)
+
+        logits = FF.get_model(X, dropout_keep_prob, is_training=is_training, layers=layers, n_classes=n_classes)
         logger.info(logits)
         softmax = tf.nn.softmax(logits)
 

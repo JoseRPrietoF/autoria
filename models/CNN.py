@@ -37,7 +37,7 @@ def batch_norm_layer(inp):
     return x
 
 
-def get_model(X,is_training, filters, W=None, n_classes=23, tf_idf=False, logger=None, opts=None):
+def get_model(X,is_training, filters, kernel_size=300, W=None, n_classes=4, tf_idf=False, logger=None, opts=None):
     """
     doc here :)
     :param X:
@@ -51,18 +51,20 @@ def get_model(X,is_training, filters, W=None, n_classes=23, tf_idf=False, logger
     logger.info(X)
     if not tf_idf:
         net = tf.nn.embedding_lookup(W, X)
+        net = tf.expand_dims(net, axis=-1)
     else:
         net  = X
-    #     net = tf.expand_dims(X, axis=-1)  # Change the shape to [batch_size,1,,output_size]
+        # net = tf.expand_dims(X, axis=-1)  # Change the shape to [batch_size,1,,output_size]
     logger.info("Model representation {}".format(net))
     for i, f in enumerate(filters):
-        print(f)
-        print(type(f))
         logger.info("Conv{}".format(i))
         with tf.name_scope("conv{}".format(i)):
-            net = conv1d_layer(net, filters=f, kernel_size=5)
-            net = max_pool1d_layer(net, ksize=[1, 2, 1, 1], strides=[1, 2, 1, 1])
-            net = batch_norm_layer(tf.cast(net, dtype=tf.float32))
+            net = tf.layers.conv2d(net, filters=f,
+           kernel_size=(kernel_size, 5),
+           strides=(1, 1), padding='same')
+            net = tf.layers.max_pooling2d(net, (2,2), strides=(2,1), padding='same')
+            net = tf.nn.relu(net)
+            # net = tf.contrib.layers.batch_norm(net)
             logger.info(net)
 
     net = tf.layers.flatten(net)

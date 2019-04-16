@@ -4,9 +4,9 @@ import logging, os
 import numpy as np
 from utils.optparse import Arguments as arguments
 from canon60 import tfidf
-from sklearn.feature_extraction.text import TfidfVectorizer
 from data import process
 from sklearn.metrics import confusion_matrix, f1_score, accuracy_score, precision_score, recall_score
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 def prepare():
     """
