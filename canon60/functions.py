@@ -14,8 +14,12 @@ def classify_per_doc(classifieds, logger=None):
         hyp, fname, y_gt = classifieds[i]
         hyp = np.argmax(hyp, axis=-1)
         y_gt = np.argmax(y_gt, axis=-1)
-        doc_name = fname.decode("utf-8").split("/")[-1]
-        doc_name = doc_name.split("_")[-1].split(".")[0]
+        try:
+            doc_name = fname.decode("utf-8").split("/")[-1]
+            doc_name = doc_name.split("_")[-1].split(".")[0]
+        except:
+            doc_name = fname.split("_")[-1].split(".")[0]
+            pass
 
         docs = per_doc.get(doc_name, [])
         docs.append((hyp, fname, y_gt))

@@ -1,9 +1,10 @@
 from __future__ import print_function
 from __future__ import division
-import logging, os
-import numpy as np
+import logging
 from utils.optparse import Arguments as arguments
-import tfidf
+from PAN import tfidf
+
+
 # import embeddings
 
 
@@ -55,8 +56,8 @@ def main():
 
             tfidf.Model(layers=opts.layers, filters=opts.filters, MODEL=opts.model,
                         min_ngram=opts.min_ngram, up=opts.max_ngram,
-                    max_features=opts.max_features, NUM_EPOCH=opts.epochs,
-                    logger=logger, dataset=opts.dataset, opts=opts, DEBUG=opts.debug, lang=l)
+                        max_features=opts.max_features, NUM_EPOCH=opts.epochs,
+                        logger=logger, dataset=opts.dataset, opts=opts, DEBUG=opts.debug, lang=l)
     elif opts.represent == "WE":
         logger.info("WE not implemented by the moment")
         exit()

@@ -17,3 +17,8 @@ def create_structure(dir_name):
 
     # if not os.path.exists(dir_name+"/output"):
     #     os.makedirs(dir_name+"/output")
+
+
+def create_dir(dir_name):
+    if not os.path.exists(dir_name):
+        os.makedirs(dir_name)

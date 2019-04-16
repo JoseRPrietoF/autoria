@@ -174,6 +174,20 @@ def read_vocab(fname,join_all=True):
 
     return X
 
+def read_vocab_list(fname):
+    """
+    Return a dict with the vocab and the freqs
+    :return:
+    """
+    X = []
+    with open(fname) as f:
+        content = f.readlines()
+        for line in content:
+            line = line.lower().strip()
+            X.append(line)
+
+    return X
+
 def write_from_array(array, path):
     """
     Aux method to call write_output from an array of results
@@ -197,12 +211,8 @@ def write_output(id, lang, type, path, gender): #set
 
 
 if __name__ == "__main__":
-    # path = "/home/jose/Documentos/MUIARFID/PRHLT/Autoria/data/train"
-    # path = "/home/jose/Documentos/MUIARFID/PRHLT/Autoria/data/test"
-    path = "/data2/jose/data/pan19-author-profiling-training-2019-02-18/es"
-    txt = "truth.txt"
-    # dt = canon60Dataset(path)
-    dt = PAN2019(path=path, txt=txt)
-    import numpy as np
-    classes = np.unique(dt.y, return_counts=True)
-    print(classes)
+
+    path = "/data2/jose/data_autoria/VocAllm"
+    l = read_vocab_list(path)
+    print(l)
+    print(len(l))

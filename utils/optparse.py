@@ -84,6 +84,12 @@ class Arguments(object):
             help="Layers for the FF or RNN network",
         )
         data.add_argument(
+            "--vocab_path",
+            default='/data2/jose/data_autoria/VocAllm',
+            type=str,
+            help="Path to load the vocabulary file",
+        )
+        data.add_argument(
             "--min_ngram", default=1, type=int, help="Min ngram"
         )
 
