@@ -1,6 +1,10 @@
 import glob, random
 from xml.dom import minidom
 import logging
+from nltk.tokenize import TweetTokenizer
+import numpy as np
+import os
+
 NL = "NL"
 
 class canon60Dataset():
@@ -57,11 +61,38 @@ class PAN2019():
 
     """
 
-    def __init__(self, path, txt, join_all=False):
+    def __init__(self, path, txt, join_all=False, name="train"):
         self.path = path
         self.txt = txt
         self.join_all = join_all
+        self.id = name
         self.X, self.y, self.fnames = self.read_files()
+
+
+    def get_vocab(self):
+        tknzr = TweetTokenizer()
+        # load
+        try:
+            X_train = np.load("./tmp/{}_X.npy".format(self.id))
+            vocab = np.load("./tmp/{}_vocab.npy".format(self.id))
+            print("Loaded data from vocab")
+        except Exception as e:
+            print(e)
+            exit()
+            print("Tokenizing")
+            X_train = [tknzr.tokenize(x) for x in self.X]
+            print("Sum")
+            vocab_dict = {}
+            print("Getting vocab")
+            for tweet_tok in X_train:
+                for tok in tweet_tok:
+                    vocab_dict[tok] = vocab_dict.get(tok, 0) + 1
+            vocab = list(vocab_dict.keys())
+            # save vocab
+            print("Saving data from vocab")
+            np.save("./tmp/{}_X".format(self.id), X_train)
+            np.save("./tmp/{}_vocab".format(self.id), vocab)
+        return vocab, X_train
 
     def read_files(self):
         """

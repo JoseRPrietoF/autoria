@@ -4,12 +4,9 @@ from data import process
 from models import CNN
 from models import FF
 from models import RNN
-from data.prepare_text import prepare_data
 from utils import train_ops
-from utils import metrics
 from sklearn.feature_extraction.text import TfidfVectorizer
 import logging
-from utils import sesions
 from sklearn.preprocessing import LabelEncoder
 from keras.utils.np_utils import to_categorical
 
@@ -42,36 +39,22 @@ class Model:
         # MODEL = "RNN"
         # MODEL = "CNN"
         if not DEBUG:
-            if dataset == "canon60":
-                root_path = opts.i
-                train_path = root_path + "train"
-                test_path = root_path + "test"
-                fname_vocab = root_path + "vocabulario"
-                n_classes = 4
 
-                #### DATOS
-                dt_train = process.canon60Dataset(train_path, join_all= False)
-                dt_test = process.canon60Dataset(test_path, join_all= False)
+            ## PAN
+            path = opts.tr_data+'/'+lang
+            path_test = opts.i+'/'+lang
+            if do_val:
+                txt_train = opts.file_i+"/{}/truth-train.txt".format(lang)
+                txt_dev = opts.file_i+"/{}/truth-dev.txt".format(lang)
+                dt_train = process.PAN2019(path=path, txt=txt_train, join_all= MODEL == "FF")
+                dt_dev = process.PAN2019(path=path, txt=txt_dev, join_all= MODEL == "FF")
+            else:
+               txt_train = opts.file_i+"/{}/truth.txt".format(lang)
+               dt_train = process.PAN2019(path=path, txt=txt_train, join_all= MODEL == "FF")
 
+            dt_test = process.PAN2019_Test(path=path_test, join_all= MODEL == "FF")
+            n_classes = 2 # bot or not bot
 
-
-
-            elif dataset == "PAN2019" :
-                ## PAN
-                path = opts.tr_data+'/'+lang
-                path_test = opts.i+'/'+lang
-                if do_val:
-                    txt_train = opts.file_i+"/{}/truth-train.txt".format(lang)
-                    txt_dev = opts.file_i+"/{}/truth-dev.txt".format(lang)
-                    dt_train = process.PAN2019(path=path, txt=txt_train, join_all= MODEL == "FF")
-                    dt_dev = process.PAN2019(path=path, txt=txt_dev, join_all= MODEL == "FF")
-                else:
-                   txt_train = opts.file_i+"/{}/truth.txt".format(lang)
-                   dt_train = process.PAN2019(path=path, txt=txt_train, join_all= MODEL == "FF")
-                
-                dt_test = process.PAN2019_Test(path=path_test, join_all= MODEL == "FF")
-                n_classes = 2 # bot or not bot
-                
 
             x_train = dt_train.X
             y_train = dt_train.y
@@ -81,36 +64,6 @@ class Model:
 
             fnames_train = dt_train.fnames
             fnames_test = dt_test.fnames
-            
-            '''
-            # onehot
-            classes = {}
-
-            for c in dt_train.y:
-                c_count = classes.get(c, 0)
-                classes[c] = c_count + 1
-            classNum = {}
-            numClass = {}
-            for i, c in enumerate(list(classes.keys())):
-                classNum[c] = i
-                numClass[i] = c
-
-            y_train_, y_test_ = [], []
-
-            for i, sentence in enumerate(y_test):
-                c = dt_test.y[i]
-                y_test_.append(classNum[c])
-
-            for i, sentence in enumerate(y_train):
-                c = dt_train.y[i]
-                y_train_.append(classNum[c])
-
-            # To One hot
-            # TODO
-            n_values = np.max(y_train_) + 1
-            y_test = np.eye(n_values)[y_test_]
-            y_train = np.eye(n_values)[y_train_]
-			'''
 			
             labelencoder = LabelEncoder()  #set
             y_train_ = np.array(y_train).astype(str) 
