@@ -322,8 +322,14 @@ class Arguments(object):
         self.opts, unkwn = self.parser.parse_known_args()
         self._check_out_dir(self.opts.work_dir)
 
-        self.output_dir(self.opts.o+'/es')
-        self.output_dir(self.opts.o+'/en')
+        #Remove these lines if you want to create the dirs automatically
+        if not os.path.isdir(self.opts.o):
+            raise argparse.ArgumentTypeError(
+                    "{} folder does not exist \n".format(self.opts.o)
+                )
+
+        self.output_dir(os.path.join(self.opts.o, "es/"))
+        self.output_dir(os.path.join(self.opts.o, "en/"))
         #self.opts.i += '/'+self.opts.lang
         layers = self.opts.layers
         filters = self.opts.filters

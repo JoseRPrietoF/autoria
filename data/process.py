@@ -195,6 +195,7 @@ def write_from_array(array, path):
     """
     for a in array:
         id, lang, type = a
+
         write_output(id, lang, type, path=path, gender=type) #set        path+'/'+lang
 
 def write_output(id, lang, type, path, gender): #set
@@ -204,7 +205,8 @@ def write_output(id, lang, type, path, gender): #set
     :param id:
     :return:
     """
-    str = '<author id="{}" lang="{}" type="{}" gender="{}"/>'.format(id, lang, type, gender) #set
+    id_file = id.split(".")[0]
+    str = '<author id="{}" lang="{}" type="{}" gender="{}"/>'.format(id_file, lang, type, gender) #set
     with open('{}/{}'.format(path, id), 'w') as the_file:
         the_file.write(str)
         the_file.close()
