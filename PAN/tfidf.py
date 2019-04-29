@@ -9,7 +9,8 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import logging
 from sklearn.preprocessing import LabelEncoder
 from keras.utils.np_utils import to_categorical
-
+from utils import metrics
+from utils.sesions import *
 
 class Model:
 
@@ -48,6 +49,10 @@ class Model:
                 txt_dev = opts.file_i+"/{}/truth-dev.txt".format(lang)
                 dt_train = process.PAN2019(path=path, txt=txt_train, join_all= MODEL == "FF")
                 dt_dev = process.PAN2019(path=path, txt=txt_dev, join_all= MODEL == "FF")
+                fnames_dev = dt_dev.fnames
+                y_dev = dt_dev.y
+                x_dev = dt_dev.X
+                del dt_dev
             else:
                txt_train = opts.file_i+"/{}/truth.txt".format(lang)
                dt_train = process.PAN2019(path=path, txt=txt_train, join_all= MODEL == "FF")
@@ -58,13 +63,15 @@ class Model:
 
             x_train = dt_train.X
             y_train = dt_train.y
+            print(len(x_train))
+            print(len(y_train))
 
             x_test = dt_test.X
             # y_test = dt_test.y
 
             fnames_train = dt_train.fnames
             fnames_test = dt_test.fnames
-			
+
             labelencoder = LabelEncoder()  #set
             y_train_ = np.array(y_train).astype(str) 
             # y_test_ = np.array(y_test).astype(str) 
@@ -74,24 +81,37 @@ class Model:
             n_values = len(np.unique(y_train_))
             # To One hot
             y_train = to_categorical(y_train_, n_values)
+
+
             # y_test = to_categorical(y_test_, n_values)
-			
+
+
             if max_features:
 
                 rep = TfidfVectorizer(ngram_range=(min_ngram,up),max_features=max_features)
             else:
                 rep = TfidfVectorizer(ngram_range=(min_ngram,up))
 
-
-            texts_rep_train = rep.fit_transform(x_train)
-            texts_rep_train = texts_rep_train.toarray()
-
-
-            text_test_rep = rep.transform(x_test)
-            text_test_rep = text_test_rep.toarray()
-
             del dt_train
             del dt_test
+
+            logger.info("fit_transform tfidf")
+            texts_rep_train = rep.fit_transform(x_train)
+            logger.info("To array")
+            texts_rep_train = texts_rep_train.toarray()
+
+            logger.info("transform tfidf")
+            text_test_rep = rep.transform(x_test)
+            logger.info("To array")
+            text_test_rep = text_test_rep.toarray()
+            if do_val:
+                text_dev_rep = rep.transform(x_dev)
+                text_dev_rep = text_dev_rep.toarray()
+                y_dev_ = np.array(y_dev).astype(str)
+                y_dev_ = labelencoder.transform(y_dev_)
+                y_dev = to_categorical(y_dev_, n_values)
+
+
             if MODEL == "CNN":
                 num = opts.num_tweets
                 texts_rep_train = texts_rep_train.reshape(int(texts_rep_train.shape[0]/num), num, texts_rep_train.shape[1])
@@ -165,7 +185,8 @@ class Model:
 
 
         train_data = (texts_rep_train, y_train, fnames_train)
-        # dev_data = (text_test_rep, y_test, fnames_test)
+        if do_val:
+            dev_data = (text_dev_rep, y_dev, fnames_dev)
         test_data = (text_test_rep, fnames_test)
         print(text_test_rep.shape)
         print(len(fnames_test))
@@ -188,6 +209,7 @@ class Model:
         init_l = tf.local_variables_initializer()
         sess.run(init_g)
         sess.run(init_l)
+        best_acc = 0
         for epoch in range(epoch_start, NUM_EPOCH + 1):
             sess.run(train_init_op, feed_dict={
                 X: train_data[0],
@@ -227,51 +249,72 @@ class Model:
             loss_count = loss_count / current_batch_index
             logger.info("Loss on epoch {} : {} - LR: {}".format(epoch, loss_count, train_ops.lr_scheduler(epoch)))
             acc = 0
-            # if do_val:
-            #     print("Eval")
-            #     ## Eval
-            #     sess.run(dev_init_op, feed_dict={
-            #     # sess.run(dev_init_op, feed_dict={
-            #         X: dev_data[0],
-            #         y: dev_data[1],
-            #         batch_size: BATCH_SIZE,
-            #     }
-            #              )
-            #
-            #     current_batch_index = 0
-            #     next_element = iter.get_next()
-            #
-            #
-            #     while True:
-            #
-            #         try:
-            #             data = sess.run([next_element])
-            #         except tf.errors.OutOfRangeError:
-            #             break
-            #
-            #         current_batch_index += 1
-            #         data = data[0]
-            #         batch_x, batch_tgt = data
-            #
-            #         results = sess.run([softmax],
-            #                                   feed_dict={
-            #                                       X: batch_x,
-            #                                       y: batch_tgt,
-            #                                       batch_size: BATCH_SIZE,
-            #                                       dropout_keep_prob: 1.0
-            #                                   })
-            #
-            #         for i in range(len(results)):
-            #             acc_aux = metrics.accuracy(X=results[i], y=batch_tgt[i])
-            #             acc += acc_aux
-            #
-            #     acc = acc / current_batch_index
-            #     print("Acc Val epoch {} : {}".format(epoch, acc))
-            #     print("----------")
+            if do_val:
+                print("Eval")
+                ## Eval
+                sess.run(dev_init_op, feed_dict={
+                # sess.run(dev_init_op, feed_dict={
+                    X: dev_data[0],
+                    y: dev_data[1],
+                    fnames_plc: dev_data[2],
+                    batch_size: BATCH_SIZE,
+                }
+                         )
 
+                current_batch_index = 0
+                next_element = iter.get_next()
+
+
+                while True:
+
+                    try:
+                        data = sess.run([next_element])
+                    except tf.errors.OutOfRangeError:
+                        break
+
+                    current_batch_index += 1
+                    data = data[0]
+                    batch_x, batch_tgt, batch_fnames = data
+
+                    results = sess.run([softmax],
+                                              feed_dict={
+                                                  X: batch_x,
+                                                  y: batch_tgt,
+                                                  lr: train_ops.lr_scheduler(epoch),
+                                                  batch_size: BATCH_SIZE,
+                                                  is_training: False,
+                                                  dropout_keep_prob: 1.0
+                                              })
+                    results = results[0]
+                    acc_aux = metrics.accuracy(X=results, y=batch_tgt)
+                    acc += acc_aux
+
+                acc = acc / current_batch_index
+                print("Acc Val epoch {} : {}".format(epoch, acc))
+                print("----------")
+                if acc > best_acc:
+                    best_acc = acc
+                    logger.info("New acc : {}".format(best_acc))
+                    save_best(sess, opts.work_dir)
+        if opts.testing and opts.do_val:
+            logger.info("Model: {}".format(MODEL))
+            logger.info("layers: {}".format(layers))
+            logger.info("max_features: {}".format(max_features))
+            logger.info("Min and max features: {} - {}".format(min_ngram, up))
+            logger.info("Best acc : {}".format(best_acc))
+            exit()
         """
         ----------------- TEST -----------------
         """
+        logger.info("\n-- TEST --\n")
+        logger.info("Restoring the best Checkpoint.")
+        # restore_file = sesions.restore_from_best(sess, save_path)
+        restore_file = restore_from_best(sess, opts.work_dir)
+        if restore_file:
+            logger.info("Best model restored")
+        else:
+            logger.info("Cant restore the best model.")
+            exit()
         Y_FALSA = np.random.randint(1, size=(BATCH_SIZE, n_classes))
         print(Y_FALSA.shape)
         logger.info("\n-- TEST --\n")

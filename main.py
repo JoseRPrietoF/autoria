@@ -56,7 +56,7 @@ def main():
 
             tfidf.Model(layers=opts.layers, filters=opts.filters, MODEL=opts.model,
                         min_ngram=opts.min_ngram, up=opts.max_ngram,
-                        max_features=opts.max_features, NUM_EPOCH=opts.epochs,
+                        max_features=opts.max_features, NUM_EPOCH=opts.epochs, do_val=opts.do_val,
                         logger=logger, dataset=opts.dataset, opts=opts, DEBUG=opts.debug, lang=l)
     elif opts.represent == "WE":
         lang = "es"
@@ -66,9 +66,9 @@ def main():
         txt_train = opts.tr_data + "/{}/truth-train.txt".format(lang)
         txt_test = opts.file_i + "/{}/truth-dev.txt".format(lang)
         txt_dev = opts.tr_data + "/{}/truth-dev.txt".format(lang)
-        dt_train = process.PAN2019(path=path, txt=txt_train, join_all=False)
-        dt_test = process.PAN2019(path=path_test, txt=txt_test, join_all=False)
-        dt_dev = process.PAN2019(path=path, txt=txt_dev, join_all=False)
+        dt_train = process.PAN2019(path=path, txt=txt_train, join_all=False, mode=opts.model)
+        dt_test = process.PAN2019(path=path_test, txt=txt_test, join_all=False, mode=opts.model)
+        dt_dev = process.PAN2019(path=path, txt=txt_dev, join_all=False, mode=opts.model)
 
 
         x_train = dt_train.X

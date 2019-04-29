@@ -71,7 +71,8 @@ class Model:
 
         glove_weights_initializer = tf.constant_initializer(embedding)
         print(glove_weights_initializer)
-        embeddings = tf.Variable(
+        # embeddings = tf.Variable(
+        embeddings = tf.constant(
             # tf.random_uniform([2000, EMBEDDING_DIM], -1.0, 1.0)
             embedding
         )
@@ -102,13 +103,16 @@ class Model:
         print("{} params to train".format(num_params))
 
         train_op, loss = train_ops.train_op(logits,y=y, learning_rate=lr, optimizer=OPTIMIZER)
+        # exit()
         """"""
         """Test de embeddings"""
 
         train_dataset = tf.data.Dataset.from_tensor_slices((X, y, fnames_plc)).batch(batch_size).shuffle(buffer_size=12)
         dev_dataset = tf.data.Dataset.from_tensor_slices((X, y, fnames_plc)).batch(batch_size).shuffle(buffer_size=12)
         test_dataset = tf.data.Dataset.from_tensor_slices((X, y, fnames_plc)).batch(batch_size).shuffle(buffer_size=12)
-
+        print(x_train.shape)
+        print(y_train.shape)
+        print(len(fnames_train))
         train_data = (x_train, y_train, fnames_train)
         dev_data = (x_dev, y_dev, fnames_dev)
         test_data = (x_test, y_test, fnames_test)

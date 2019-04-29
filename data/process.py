@@ -61,8 +61,9 @@ class PAN2019():
 
     """
 
-    def __init__(self, path, txt, join_all=False, name="train"):
+    def __init__(self, path, txt, join_all=False, name="train", mode="CNN3D"):
         self.path = path
+        self.mode = mode
         self.txt = txt
         self.join_all = join_all
         self.id = name
@@ -118,15 +119,19 @@ class PAN2019():
                     text += txt_region.firstChild.nodeValue + " "
                 X.append(text)
                 y.append(clase)
+                fnames.append(fname_xml)
+
             else:
                 for txt_region in docs:
                     text += txt_region.firstChild.nodeValue
                     X.append(text)
-                y.append(clase)
+                    if self.mode == "CNN":
+                        y.append(clase)
+                        fnames.append(fname_xml)
 
-
-            fnames.append(fname_xml)
-
+                if self.mode == "CNN3D":
+                    y.append(clase)
+                    fnames.append(fname_xml)
 
         return X,y, fnames
 

@@ -2,14 +2,25 @@ import tensorflow as tf
 
 
 def conv2d(net, filters, kernel, strides):
-    net = tf.layers.conv2d(
+    # net = tf.layers.conv2d(
+    #     net,
+    #     filters, kernel,
+    #     activation=None,
+    #     strides=strides,
+    #     padding='same',
+    #     kernel_initializer=tf.keras.initializers.he_normal(),
+    #     kernel_regularizer=tf.contrib.layers.l2_regularizer(0.1),
+    #     use_bias=False,
+    # )
+
+    net = tf.layers.separable_conv2d(
         net,
         filters, kernel,
         activation=None,
         strides=strides,
         padding='same',
-        kernel_initializer=tf.keras.initializers.he_normal(),
-        kernel_regularizer=tf.contrib.layers.l2_regularizer(0.1),
+        # kernel_initializer=tf.keras.initializers.he_normal(),
+        # kernel_regularizer=tf.contrib.layers.l2_regularizer(0.1),
         use_bias=False,
     )
     return net
@@ -18,6 +29,7 @@ def conv2d(net, filters, kernel, strides):
 def get_model(X,is_training, filters,
               num_tweets=100,
               kernel_size=3,
+              # kernel_size=300,
               W=None, n_classes=2, tf_idf=False, logger=None,
               opts=None,
                 n_gramas=2
@@ -34,9 +46,9 @@ def get_model(X,is_training, filters,
     tf.logging.set_verbosity(tf.logging.FATAL)
     logger.info(X)
     if not tf_idf:
-        net = tf.nn.embedding_lookup(W, X)
+        net = tf.nn.embedding_lookup(W, X) # 50*100 = 5000 - [BATCH, 300, 5000]
         split = tf.split(net, num_tweets, axis=1)
-        net = tf.stack(split, axis=-1)
+        net = tf.stack(split, axis=-1) # [BATCH, 300, 5000] -> [BATCH, 50, 300, 100]
         # net = tf.transpose(net, [0,2,1])
     else:
         net  = X
@@ -46,8 +58,9 @@ def get_model(X,is_training, filters,
     for i, f in enumerate(filters):
         logger.info("Conv{}".format(i))
         with tf.name_scope("conv{}".format(i)):
-            # net = conv2d(net, f, kernel=(n_gramas, kernel_size), strides=(1,1))
-            net = conv2d(net, f, kernel=(50, 1), strides=(1,1))
+            net = conv2d(net, f, kernel=(n_gramas, kernel_size), strides=(1,1))
+            # net = conv2d(net, f, kernel=(50, n_gramas), strides=(1,1))
+            # net = conv2d(net, f, kernel=(3, 3), strides=(1,1))
             print(net)
             net = tf.nn.max_pool(net, ksize=(1,2,1,1), strides=(1,2,1,1), padding="SAME")
             logger.info(net)

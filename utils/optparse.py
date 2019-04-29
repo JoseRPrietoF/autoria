@@ -62,6 +62,13 @@ class Arguments(object):
             "--debug", dest="debug", type=self.str2bool, help="Run random data for  debug",
             default=False
         )
+        general.add_argument(
+            "--testing",
+            default=False,
+            type=self.str2bool,
+            help="testing. Just show the results on the eval data",
+        )
+
 
         # ----------------------------------------------------------------------
         # ----- Define processing data parameters

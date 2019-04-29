@@ -1,15 +1,10 @@
 import tensorflow as tf
 import os
 
-def conv1d_layer(x, filters, kernel_size, strides=(1,1)):
-    """This is a 1d conv, so filter_shape = [dim, input_channels, out_channels]"""
 
-    x = tf.layers.conv1d(x, filters, kernel_size, strides=strides, padding='same')
-    x = tf.nn.relu(x)
-    return x
 
-def conv2d(net, filters, kernel, strides):
-    net = tf.layers.conv2d(
+def conv1d(net, filters, kernel, strides):
+    net = tf.layers.conv1d(
         net,
         filters, kernel,
         activation=None,
@@ -60,7 +55,7 @@ def batch_norm_layer(inp):
     return x
 
 
-def get_model(X,is_training, filters, kernel_size=3, W=None, n_classes=4, tf_idf=False, logger=None, opts=None):
+def get_model(X,is_training, filters, kernel_size=300, W=None, n_classes=4, tf_idf=False, logger=None, opts=None):
     """
     doc here :)
     :param X:
@@ -74,8 +69,8 @@ def get_model(X,is_training, filters, kernel_size=3, W=None, n_classes=4, tf_idf
     logger.info(X)
     if not tf_idf:
         net = tf.nn.embedding_lookup(W, X)
-        net = tf.transpose(net, [0,2,1])
-        net = tf.expand_dims(net, axis=-1)
+        # net = tf.transpose(net, [0,2,1])
+        # net = tf.expand_dims(net, axis=-1)
     else:
         net  = X
         # net = tf.expand_dims(X, axis=-1)  # Change the shape to [batch_size,1,,output_size]
@@ -84,10 +79,10 @@ def get_model(X,is_training, filters, kernel_size=3, W=None, n_classes=4, tf_idf
     for i, f in enumerate(filters):
         logger.info("Conv{}".format(i))
         with tf.name_scope("conv{}".format(i)):
-            net = conv2d(net, f, kernel=(kernel_size, 2), strides=(1,1))
+            net = conv1d(net, f, kernel=(kernel_size), strides=2)
             print(net)
-            net = tf.nn.max_pool(net, ksize=(1,2,2,1), strides=(1,1,2,1), padding="SAME")
-            logger.info(net)
+            # net = tf.nn.max_pool(net, ksize=(1,2,2,1), strides=(1,1,2,1), padding="SAME")
+            # logger.info(net)
 
     net = tf.layers.flatten(net)
     logger.info("Flatten {}".format(net))
