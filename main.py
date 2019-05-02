@@ -52,7 +52,7 @@ def main():
     logger.info("Data representation as : {}".format(opts.represent))
     n_classes = 2
     if opts.represent == "tfidf":
-        for l in ['es','en']:
+        for l in ['en','es']:
 
             tfidf.Model(layers=opts.layers, filters=opts.filters, MODEL=opts.model,
                         min_ngram=opts.min_ngram, up=opts.max_ngram,

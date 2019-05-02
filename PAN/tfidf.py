@@ -52,6 +52,7 @@ class Model:
                 fnames_dev = dt_dev.fnames
                 y_dev = dt_dev.y
                 x_dev = dt_dev.X
+                # sent_dev = dt_dev.sentiment
                 del dt_dev
             else:
                txt_train = opts.file_i+"/{}/truth.txt".format(lang)
@@ -60,6 +61,8 @@ class Model:
             dt_test = process.PAN2019_Test(path=path_test, join_all= MODEL == "FF")
             n_classes = 2 # bot or not bot
 
+            # sent_train = dt_train.sentiment
+            # sent_test = dt_test.sentiment
 
             x_train = dt_train.X
             y_train = dt_train.y
@@ -89,9 +92,9 @@ class Model:
 
             if max_features:
 
-                rep = TfidfVectorizer(ngram_range=(min_ngram,up),max_features=max_features, binary=True)
+                rep = TfidfVectorizer(ngram_range=(min_ngram,up),max_features=max_features)
             else:
-                rep = TfidfVectorizer(ngram_range=(min_ngram,up), binary=True)
+                rep = TfidfVectorizer(ngram_range=(min_ngram,up))
 
             del dt_train
             del dt_test   
@@ -134,12 +137,19 @@ class Model:
             fnames_train = np.random.choice(np_alphabet, [train_data])
             fnames_test = np.random.choice(np_alphabet, [dev_data])
             logger.info("Random data created")
+
+        # print(len(sent_train))
+        # print(texts_rep_train.shape)
+        # texts_rep_train = np.concatenate((texts_rep_train, np.expand_dims(sentiment.append([blob.sentiment.polarity, blob.sentiment.subjectivity]),axis=1)), axis=-1)
+        # text_test_rep = np.concatenate((text_test_rep, np.expand_dims(sent_test,axis=1)), axis=-1)
+        # text_dev_rep = np.concatenate((text_dev_rep, np.expand_dims(sent_dev,axis=1)), axis=-1)
+        # texts_rep_train = np.concatenate((texts_rep_train, sent_train), axis=-1)
         logger.info("texts_rep_train: {}".format(texts_rep_train.shape))
         logger.info("y_train: {}".format(y_train.shape))
 
 
 
-            # X_train, X_val, X_test, y_train, y_val, y_test, MAX_SEQUENCE_LENGTH = prepare_data(
+        # X_train, X_val, X_test, y_train, y_val, y_test, MAX_SEQUENCE_LENGTH = prepare_data(
         #     dir_word_embeddings, fname_vocab, train_path, test_path, EMBEDDING_DIM,
         #     VALIDATION_SPLIT=DEV_SPLIT, MAX_SEQUENCE_LENGTH=MAX_SEQUENCE_LENGTH
         # )

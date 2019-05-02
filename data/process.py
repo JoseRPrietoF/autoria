@@ -4,6 +4,7 @@ import logging
 from nltk.tokenize import TweetTokenizer
 import numpy as np
 import os
+from textblob import TextBlob
 
 NL = "NL"
 
@@ -61,13 +62,16 @@ class PAN2019():
 
     """
 
-    def __init__(self, path, txt, join_all=False, name="train", mode="CNN3D"):
+    def __init__(self, path, txt, join_all=False, name="train", mode="CNN3D", sentiment=True):
         self.path = path
         self.mode = mode
         self.txt = txt
         self.join_all = join_all
         self.id = name
-        self.X, self.y, self.fnames, self.y2 = self.read_files()
+        if sentiment:
+            self.X, self.y, self.fnames, self.y2, self.sentiment = self.read_files_sentiment()
+        else:
+            self.X, self.y, self.fnames, self.y2 = self.read_files()
 
 
     def get_vocab(self):
@@ -138,7 +142,52 @@ class PAN2019():
 
         return X,y, fnames, y2
 
+    def read_files_sentiment(self):
+        """
+        Return the contents of files with the gt
+        :return:
+        """
+        X,y, y2, fnames = [], [], [], []
+        sentiment = []
+        txt_path = self.txt
+        with open(txt_path) as f:
+            lines = f.readlines()
 
+        random.shuffle(lines)
+        print("Join ALL: {}".format(self.join_all))
+        for line in lines:
+            fname, clase, gender = line.split(":::")
+            # print("{} - {} - {}".format(fname, clase, gender))
+            fname_xml = "{}/{}.xml".format(self.path, fname)
+            xmldoc = minidom.parse(fname_xml)
+            docs = xmldoc.getElementsByTagName("document")
+            text = ""
+            if self.join_all:
+                for txt_region in docs:
+                    text += txt_region.firstChild.nodeValue + " "
+                blob = TextBlob(text)
+                sentiment.append([blob.sentiment.polarity, blob.sentiment.subjectivity])
+
+                X.append(text)
+                y.append(clase)
+                y2.append(gender)
+                fnames.append(fname_xml)
+
+            else:
+                for txt_region in docs:
+                    text += txt_region.firstChild.nodeValue
+                    X.append(text)
+                    if self.mode == "CNN":
+                        y.append(clase)
+                        y2.append(gender)
+                        fnames.append(fname_xml)
+
+                if self.mode == "CNN3D":
+                    y.append(clase)
+                    y2.append(gender)
+                    fnames.append(fname_xml)
+
+        return X,y, fnames, y2, sentiment
 
 
 class PAN2019_Test():
@@ -146,11 +195,14 @@ class PAN2019_Test():
 
     """
 
-    def __init__(self, path, join_all=False):
+    def __init__(self, path, join_all=False, sentiment=True):
         self.path = path
         self.join_all = join_all
         self.files = self.get_files()
-        self.X, self.fnames = self.read_files()
+        if sentiment:
+            self.X, self.fnames, self.sentiment = self.read_files_sentiment()
+        else:
+            self.X, self.fnames = self.read_files()
 
     def read_files(self):
         """
@@ -181,6 +233,37 @@ class PAN2019_Test():
 
 
         return X, fnames
+
+    def read_files_sentiment(self):
+        """
+        Return the contents of files with the gt
+        :return:
+        """
+        X, fnames = [], []
+        sent = []
+        #print("Join ALL: {}".format(self.join_all))
+        for fname_xml in self.files:
+
+            xmldoc = minidom.parse(fname_xml)
+            docs = xmldoc.getElementsByTagName("document")
+            text = ""
+            if self.join_all:
+                for txt_region in docs:
+                    text += txt_region.firstChild.nodeValue + " "
+                X.append(text)
+                blob = TextBlob(text)
+                sent.append([blob.sentiment.polarity, blob.sentiment.subjectivity])
+            else:
+                for txt_region in docs:
+                    text += txt_region.firstChild.nodeValue
+                    X.append(text)
+
+
+
+            fnames.append(fname_xml)
+
+
+        return X, fnames, sent
 
     def get_files(self, ext="xml"):
         """
