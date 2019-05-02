@@ -63,8 +63,9 @@ class Model:
 
             x_train = dt_train.X
             y_train = dt_train.y
+            y2_train = dt_train.y2
             print(len(x_train))
-            print(len(y_train))
+            print(len(y_train)) 
 
             x_test = dt_test.X
             # y_test = dt_test.y
@@ -93,7 +94,7 @@ class Model:
                 rep = TfidfVectorizer(ngram_range=(min_ngram,up), binary=True)
 
             del dt_train
-            del dt_test
+            del dt_test   
 
             logger.info("fit_transform tfidf")
             texts_rep_train = rep.fit_transform(x_train)
@@ -366,7 +367,7 @@ class Model:
 
         logger.info("----------")
         logger.info("Writting results in output dir {}".format("{}/{}".format(opts.o, lang)))
-        process.write_from_array(classifieds_to_write, "{}/{}".format(opts.o, lang))
+        process.write_from_array(classifieds_to_write, "{}/{}".format(opts.o, lang),x_train, texts_rep_train, y2_train, x_test, text_test_rep, fnames_test)
         # [print(x) for x in classifieds_to_write]
 
 if __name__ == "__main__":

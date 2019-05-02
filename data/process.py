@@ -67,7 +67,7 @@ class PAN2019():
         self.txt = txt
         self.join_all = join_all
         self.id = name
-        self.X, self.y, self.fnames = self.read_files()
+        self.X, self.y, self.fnames, self.y2 = self.read_files()
 
 
     def get_vocab(self):
@@ -100,7 +100,7 @@ class PAN2019():
         Return the contents of files with the gt
         :return:
         """
-        X,y, fnames = [], [], []
+        X,y, y2, fnames = [], [], [], []
         txt_path = self.txt
         with open(txt_path) as f:
             lines = f.readlines()
@@ -119,6 +119,7 @@ class PAN2019():
                     text += txt_region.firstChild.nodeValue + " "
                 X.append(text)
                 y.append(clase)
+                y2.append(gender)
                 fnames.append(fname_xml)
 
             else:
@@ -127,13 +128,15 @@ class PAN2019():
                     X.append(text)
                     if self.mode == "CNN":
                         y.append(clase)
+                        y2.append(gender)
                         fnames.append(fname_xml)
 
                 if self.mode == "CNN3D":
                     y.append(clase)
+                    y2.append(gender)
                     fnames.append(fname_xml)
 
-        return X,y, fnames
+        return X,y, fnames, y2
 
 
 
@@ -224,15 +227,26 @@ def read_vocab_list(fname):
 
     return X
 
-def write_from_array(array, path):
+def write_from_array(array, path, x_train=[], texts_rep_train=[], y2_train=[], x_test=[], text_test_rep=[], fnames_test=[]):
     """
     Aux method to call write_output from an array of results
     :return:
     """
+
+    id_human = []	
     for a in array:
         id, lang, type = a
+	
+        if type == "bot":
+            write_output(id, lang, type, path=path, gender=type)
+        else:
+            id_human.append(id)
+    
+    gender_ids = get_gender(id_human, lang, x_train, texts_rep_train, y2_train, x_test, text_test_rep, fnames_test)
 
-        write_output(id, lang, type, path=path, gender=type) #set        path+'/'+lang
+    for b in gender_ids:
+        id, lang, gender = b
+        write_output(id, lang, "human", path=path, gender=gender.strip()) 
 
 def write_output(id, lang, type, path, gender): #set
     """
@@ -246,6 +260,46 @@ def write_output(id, lang, type, path, gender): #set
     with open('{}/{}'.format(path, id), 'w') as the_file:
         the_file.write(str)
         the_file.close()
+
+from sklearn.neural_network import MLPClassifier
+from data import linguistic_process
+ 
+def get_gender(id_human, lang, x_train, texts_rep_train, y_train, x_test, text_test_rep, fnames_test):
+
+    info = []
+    '''
+    if lang == "en":
+        arr_ling = linguistic_process.sentiment_analisis_textblob(x_train)
+        texts_rep_train = np.column_stack((arr_ling,texts_rep))
+    '''
+    for i,e in enumerate(y_train):
+        if e=="bot":
+            texts_rep_train.pop(i)
+            y_train.pop(i)
+
+    clf = MLPClassifier(hidden_layer_sizes=(256, 128, 64, 32))
+    clf.fit(texts_rep_train, y_train)	
+
+    x_test_new = []
+    id_test = []
+
+    for i,fname in enumerate(fnames_test):
+        fname = fname.split("/")[-1]
+        if fname in id_human:
+            x_test_new.append(text_test_rep[i])
+            id_test.append(fname)
+    '''
+    if lang == "en":
+        arr_ling = linguistic_process.sentiment_analisis_textblob(x_test)
+        x_test_new = np.column_stack((arr_ling,x_test_new))    
+    '''
+    pred = clf.predict(x_test_new) 
+
+    for i,gend in enumerate(pred):
+        info.append((id_test[i],lang,gend))
+
+    return info
+
 
 
 if __name__ == "__main__":
