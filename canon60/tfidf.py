@@ -4,7 +4,6 @@ from data import process
 from models import CNN
 from models import FF
 from models import RNN
-from data.prepare_text import prepare_data
 from utils import train_ops
 from utils import metrics
 from sklearn.feature_extraction.text import TfidfVectorizer

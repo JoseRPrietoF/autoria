@@ -88,9 +88,9 @@ class Model:
 
             if max_features:
 
-                rep = TfidfVectorizer(ngram_range=(min_ngram,up),max_features=max_features)
+                rep = TfidfVectorizer(ngram_range=(min_ngram,up),max_features=max_features, binary=True)
             else:
-                rep = TfidfVectorizer(ngram_range=(min_ngram,up))
+                rep = TfidfVectorizer(ngram_range=(min_ngram,up), binary=True)
 
             del dt_train
             del dt_test

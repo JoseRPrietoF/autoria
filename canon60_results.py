@@ -119,8 +119,8 @@ def main():
     vocab = process.read_vocab_list(opts.vocab_path)
     logger.info("Results")
     # clasificadores = ["GaussianNB", "MultinomialNB", "LogisticRegression", "DecisionTreeClassifier",  "RandomForestClassifier", "SVC", "KNN", ]
-    clasificadores = ["LogisticRegression", "DecisionTreeClassifier",  "RandomForestClassifier", "SVC", "KNN", ]
-    max_features = [500,1000,2000,4000,8000,10000,20000,len(vocab)]
+    clasificadores = ["KNN", "SVC"]
+    max_features = [500,1000,2000,5000,10000,15000, 20000,len(vocab)]
     # max_features = [10000]
     min_ngrams = [1]
     max_ngram = [2,3,4,5,6,7,8,9]
@@ -149,6 +149,7 @@ def main():
                     res = "{},{},{},{},{},{},{},{}\n".format(clasif, max_feat, min_ngram, up, acc, f1_macro, p_macro, r_macro)
                     logger.info(res)
                     file.write(res)
+                    file.flush()
         file.close()
 
     logger.info("---- FIN ----")

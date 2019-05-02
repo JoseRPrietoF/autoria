@@ -77,7 +77,7 @@ def main():
     logger.info("Results")
     modelos = ["FF", ]
     representation = ["tfidf", ]
-    max_features = [500,1000,2000,4000,8000,10000,20000,len(vocab)]
+    max_features = [500,1000,2000,5000,10000,15000, 20000,len(vocab)]
     # max_features = [500,10000]
     min_ngrams = [1]
     max_ngram = [2,3,4,5,6,7,8,9]
@@ -104,7 +104,7 @@ def main():
                         logger.info(text_test_rep.shape)
 
                         model = tfidf.Model(texts_rep_train, y_train, text_test_rep, y_test,fnames_train,fnames_test,
-                                            layers=opts.layers, filters=opts.filters, MODEL=opts.model,
+                                            layers=opts.layers,
                                     logger=logger, opts=opts)
 
                         pred, y_true = model.get_results()
@@ -116,6 +116,7 @@ def main():
 
                         logger.info(res)
                         file.write(res)
+                        file.flush()
             file.close()
 
     logger.info("---- FIN ----")
