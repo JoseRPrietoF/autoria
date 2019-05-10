@@ -41,5 +41,3 @@ def sentiment_analisis_textblob(texts,sa=True,sf=True):
 			
 				
 		
-				
-			

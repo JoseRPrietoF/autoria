@@ -44,11 +44,13 @@ class Model:
             ## PAN
             path = opts.tr_data+'/'+lang
             path_test = opts.i+'/'+lang
+            sent = 0
+            if lang == 'en': sent = 0
             if do_val:
                 txt_train = opts.file_i+"/{}/truth-train.txt".format(lang)
                 txt_dev = opts.file_i+"/{}/truth-dev.txt".format(lang)
-                dt_train = process.PAN2019(path=path, txt=txt_train, join_all= MODEL == "FF")
-                dt_dev = process.PAN2019(path=path, txt=txt_dev, join_all= MODEL == "FF")
+                dt_train = process.PAN2019(path=path, txt=txt_train, join_all= MODEL == "FF", sentiment_id=sent)
+                dt_dev = process.PAN2019(path=path, txt=txt_dev, join_all= MODEL == "FF", sentiment_id=sent)
                 fnames_dev = dt_dev.fnames
                 y_dev = dt_dev.y
                 x_dev = dt_dev.X
@@ -56,9 +58,9 @@ class Model:
                 del dt_dev
             else:
                txt_train = opts.file_i+"/{}/truth.txt".format(lang)
-               dt_train = process.PAN2019(path=path, txt=txt_train, join_all= MODEL == "FF")
+               dt_train = process.PAN2019(path=path, txt=txt_train, join_all= MODEL == "FF",sentiment_id=sent)
 
-            dt_test = process.PAN2019_Test(path=path_test, join_all= MODEL == "FF")
+            dt_test = process.PAN2019_Test(path=path_test, join_all= MODEL == "FF",sentiment_id=sent)
             n_classes = 2 # bot or not bot
 
             # sent_train = dt_train.sentiment
@@ -68,7 +70,8 @@ class Model:
             y_train = dt_train.y
             y2_train = dt_train.y2
             print(len(x_train))
-            print(len(y_train)) 
+            print(len(y_train))
+            print(len(y2_train)) 
 
             x_test = dt_test.X
             # y_test = dt_test.y
@@ -377,6 +380,22 @@ class Model:
 
         logger.info("----------")
         logger.info("Writting results in output dir {}".format("{}/{}".format(opts.o, lang)))
+        
+        if sent!=2 and lang == 'en':
+                dt_train = process.PAN2019(path=path, txt=txt_train, join_all= MODEL == "FF", sentiment_id=2)
+                x_train = dt_train.X
+                y2_train = dt_train.y2
+                del dt_train
+                if max_features:
+                    rep = TfidfVectorizer(ngram_range=(min_ngram,up),max_features=max_features)
+                else:
+                    rep = TfidfVectorizer(ngram_range=(min_ngram,up))
+                texts_rep_train = rep.fit_transform(x_train).toarray()
+                dt_test = process.PAN2019_Test(path=path_test, join_all= MODEL == "FF",sentiment_id=2)
+                del dt_test
+                x_test = dt_test.X
+                text_test_rep = rep.transform(x_test).toarray()
+        
         process.write_from_array(classifieds_to_write, "{}/{}".format(opts.o, lang),x_train, texts_rep_train, y2_train, x_test, text_test_rep, fnames_test)
         # [print(x) for x in classifieds_to_write]
 

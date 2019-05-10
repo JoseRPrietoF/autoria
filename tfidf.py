@@ -60,16 +60,18 @@ class Model:
                 ## PAN
                 path = opts.tr_data+'/'+lang
                 path_test = opts.i+'/'+lang
+                sentiment = False
+                    if lang == 'en': sentiment = True
                 if do_val:
                     txt_train = opts.file_i+"/{}/truth-train.txt".format(lang)
                     txt_dev = opts.file_i+"/{}/truth-dev.txt".format(lang)
-                    dt_train = process.PAN2019(path=path, txt=txt_train, join_all= MODEL == "FF")
-                    dt_dev = process.PAN2019(path=path, txt=txt_dev, join_all= MODEL == "FF")
+                    dt_train = process.PAN2019(path=path, txt=txt_train, join_all= MODEL == "FF",sentiment)
+                    dt_dev = process.PAN2019(path=path, txt=txt_dev, join_all= MODEL == "FF",sentiment)
                 else:
                    txt_train = opts.file_i+"/{}/truth.txt".format(lang)
-                   dt_train = process.PAN2019(path=path, txt=txt_train, join_all= MODEL == "FF")
+                   dt_train = process.PAN2019(path=path, txt=txt_train, join_all= MODEL == "FF",sentiment)
                 
-                dt_test = process.PAN2019_Test(path=path_test, join_all= MODEL == "FF")
+                dt_test = process.PAN2019_Test(path=path_test, join_all= MODEL == "FF",sentiment)
                 n_classes = 2 # bot or not bot
                 
 

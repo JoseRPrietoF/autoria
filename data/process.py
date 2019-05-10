@@ -57,22 +57,49 @@ class canon60Dataset():
 
         return X,y, fnames
 
+import re
+
+def clean_texts(texts):
+    cleaned_texts = []
+    for text in texts:
+        text = text.strip().lower()
+        patron = re.compile(r'RT @',re.I|re.U)
+        text = patron.sub("USER",text)
+        patron = re.compile(r'[@]\w+',re.I|re.U)	
+        text = patron.sub("USER",text)
+        patron = re.compile(r'[#]\w+',re.I|re.U)	
+        text = patron.sub("tag",text)
+        patron = re.compile(r'[0-9]+',re.I|re.U)	
+        text = patron.sub("NUM",text)
+        patron = re.compile(r'https?://[\w]+(?:\.\w+)+',re.I|re.U)
+        text = patron.sub("URL",text)
+        patron = re.compile(r'(?:\d{2}[/-]\d{2}(?:[/-]\d{2,4})?)',re.I|re.U)
+        text = patron.sub("DATE",text) 
+        #patron = re.compile('[\s]+')
+        #text = patron.sub(" ",text)	
+        cleaned_texts.append(text)
+	
+    return cleaned_texts
+
 class PAN2019():
     """
 
     """
 
-    def __init__(self, path, txt, join_all=False, name="train", mode="CNN3D", sentiment=True):
+    def __init__(self, path, txt, join_all=False, sentiment_id=0, name="train", mode="CNN3D", doPrep = False):
         self.path = path
         self.mode = mode
         self.txt = txt
         self.join_all = join_all
         self.id = name
-        if sentiment:
-            self.X, self.y, self.fnames, self.y2, self.sentiment = self.read_files_sentiment()
+        if sentiment_id > 0:
+            self.X, self.y, self.fnames, self.y2, self.sentiment = self.read_files_sentiment(sentiment_id)
         else:
             self.X, self.y, self.fnames, self.y2 = self.read_files()
-
+	
+        if doPrep:
+            self.X = clean_texts(self.X)
+      
 
     def get_vocab(self):
         tknzr = TweetTokenizer()
@@ -142,7 +169,13 @@ class PAN2019():
 
         return X,y, fnames, y2
 
-    def read_files_sentiment(self):
+#JJ - adj *
+#NN - noun
+#RB - adv *
+#VB - verb
+#PR - pron *
+
+    def read_files_sentiment(self,sentiment_id):
         """
         Return the contents of files with the gt
         :return:
@@ -166,7 +199,14 @@ class PAN2019():
                 for txt_region in docs:
                     text += txt_region.firstChild.nodeValue + " "
                 blob = TextBlob(text)
-                sentiment.append([blob.sentiment.polarity, blob.sentiment.subjectivity])
+                if sentiment_id == 2:
+                    nparray = np.array(blob.tags)[:,1]
+                    adj = len([i for i in nparray if i[:2]=='JJ'])
+                    adv = len([i for i in nparray if i[:2]=='RB'])
+                    pron = len([i for i in nparray if i[:2]=='PR'])
+                    sentiment.append([blob.sentiment.polarity, blob.sentiment.subjectivity,adj,adv,pron])
+                elif sentiment_id == 1:
+                    sentiment.append([blob.sentiment.polarity, blob.sentiment.subjectivity])
 
                 X.append(text)
                 y.append(clase)
@@ -195,14 +235,17 @@ class PAN2019_Test():
 
     """
 
-    def __init__(self, path, join_all=False, sentiment=True):
+    def __init__(self, path, join_all=False, sentiment_id=0, doPrep= False):
         self.path = path
         self.join_all = join_all
         self.files = self.get_files()
-        if sentiment:
-            self.X, self.fnames, self.sentiment = self.read_files_sentiment()
+        if sentiment_id > 0:
+            self.X, self.fnames, self.sentiment = self.read_files_sentiment(sentiment_id)
         else:
             self.X, self.fnames = self.read_files()
+	
+        if doPrep:
+            self.X = clean_texts(self.X)
 
     def read_files(self):
         """
@@ -234,7 +277,7 @@ class PAN2019_Test():
 
         return X, fnames
 
-    def read_files_sentiment(self):
+    def read_files_sentiment(self,sentiment_id):
         """
         Return the contents of files with the gt
         :return:
@@ -252,7 +295,14 @@ class PAN2019_Test():
                     text += txt_region.firstChild.nodeValue + " "
                 X.append(text)
                 blob = TextBlob(text)
-                sent.append([blob.sentiment.polarity, blob.sentiment.subjectivity])
+                if sentiment_id == 2:
+                    nparray = np.array(blob.tags)[:,1]
+                    adj = len([i for i in nparray if i[:2]=='JJ'])
+                    adv = len([i for i in nparray if i[:2]=='RB'])
+                    pron = len([i for i in nparray if i[:2]=='PR'])
+                    sent.append([blob.sentiment.polarity, blob.sentiment.subjectivity,adj,adv,pron])
+                elif sentiment_id == 1:
+                    sent.append([blob.sentiment.polarity, blob.sentiment.subjectivity])
             else:
                 for txt_region in docs:
                     text += txt_region.firstChild.nodeValue
@@ -310,7 +360,7 @@ def read_vocab_list(fname):
 
     return X
 
-def write_from_array(array, path, x_train=[], texts_rep_train=[], y2_train=[], x_test=[], text_test_rep=[], fnames_test=[]):
+def write_from_array(array, path, x_train, texts_rep_train, y2_train, x_test, text_test_rep, fnames_test):
     """
     Aux method to call write_output from an array of results
     :return:
@@ -346,7 +396,7 @@ def write_output(id, lang, type, path, gender): #set
 
 from sklearn.neural_network import MLPClassifier
 from data import linguistic_process
- 
+
 def get_gender(id_human, lang, x_train, texts_rep_train, y_train, x_test, text_test_rep, fnames_test):
 
     info = []
